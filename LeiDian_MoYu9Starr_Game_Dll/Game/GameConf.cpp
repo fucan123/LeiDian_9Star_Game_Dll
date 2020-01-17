@@ -33,7 +33,7 @@ bool GameConf::ReadConf(const char* path)
 		return false;
 	}
 
-	bool pet = false, pickup = false, use = false, checkin = false, sell = false, trump = false;
+	bool pet = false, pickup = false, use = false, drop = false, checkin = false, sell = false, trump = false;
 	int length = 0;
 	char data[128];
 	while ((length = file.GetLine(data, 128)) > -1) {
@@ -50,6 +50,7 @@ bool GameConf::ReadConf(const char* path)
 			pet = false;
 			pickup = false;
 			use = false;
+			drop = false;
 			checkin = false;
 			sell = false;
 			trump = false;
@@ -65,6 +66,10 @@ bool GameConf::ReadConf(const char* path)
 		}
 		if (strstr(data, "使用物品")) {
 			use = true;
+			continue;
+		}
+		if (strstr(data, "丢弃物品")) {
+			drop = true;
 			continue;
 		}
 		if (strstr(data, "售卖物品") || strstr(data, "出售物品")) {
@@ -91,6 +96,10 @@ bool GameConf::ReadConf(const char* path)
 		}
 		if (use) {
 			ReadUse(data);
+			continue;
+		}
+		if (drop) {
+			ReadDrop(data);
 			continue;
 		}
 		if (sell) {
@@ -152,6 +161,23 @@ void GameConf::ReadUse(const char * data)
 	printf("%d.自动使用物品:%s %08X\n", m_stUse.Length, data, type);
 }
 
+// 读取丢弃物品
+void GameConf::ReadDrop(const char * data)
+{
+	if (m_stDrop.Length >= MAX_CONF_ITEMS)
+		return;
+
+	//Explode arr("-", data);
+	DWORD length = m_stDrop.Length;
+	int type = TransFormItemType(data);
+	strcpy(m_stDrop.Drops[length].Name, data);
+	m_stDrop.Drops[length].Type = type;
+	//m_stDrop.Drops[length].Extra[0] = arr.GetValue2Int(1);
+	m_stDrop.Length++;
+
+	printf("%d.自动丢弃物品:%s %08X\n", m_stDrop.Length, data, type);
+}
+
 // 读取售卖物品
 void GameConf::ReadSell(const char * data)
 {
@@ -191,7 +217,7 @@ void GameConf::ReadTrump(const char* data)
 	Explode arr("-", data);
 	DWORD length = m_stTrump.Length;
 	strcpy(m_stTrump.Trumps[length].Name, arr[0]);
-	m_stTrump.Trumps[length].Level = arr.GetValue2Int(1);
+	m_stTrump.Trumps[length].Extra[0] = arr.GetValue2Int(1);
 	m_stTrump.Length++;
 
 	printf("%d.自动合法宝:%s %d\n", m_stCheckIn.Length, arr[0], arr.GetValue2Int(1));

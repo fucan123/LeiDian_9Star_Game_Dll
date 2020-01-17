@@ -13,7 +13,7 @@ Magic::Magic(Game* p)
 // 使用技能
 int Magic::UseMagic(const char* name, int mv_x, int mv_y)
 {
-	wchar_t log[64];
+	wchar_t log[128];
 	int click_x = 0, click_y = 0;
 	GetMagicClickPos(name, click_x, click_y);
 	if (click_x && click_y) {
@@ -33,6 +33,9 @@ int Magic::UseMagic(const char* name, int mv_x, int mv_y)
 
 				Sleep(100);
 				for (int j = 0; j < wait_ms; j += 100) {
+					if (m_pGame->m_pGameProc->m_bPause)
+						break;
+
 					int result = MagicIsOut(name);
 					if (result == -1) {
 						return -1;
@@ -41,7 +44,8 @@ int Magic::UseMagic(const char* name, int mv_x, int mv_y)
 						DWORD ms = GetTickCount() - use_ms;
 						if (ms >= 300) {
 							DbgPrint("技能:%s(%d)已完成释放, 用时:%d毫秒\n", name, m_nPixelCount, ms);
-							LOGVARP2(log, "c6", L"技能:%hs(%d)已完成释放, 用时:%d毫秒", name, m_nPixelCount, ms);
+							LOGVARP2(log, "c6", L"技能:%hs<b class='c3'>(%d)</b>已释放, 用时:<b class='c3'>(%d)</b>毫秒",
+								name, m_nPixelCount, ms);
 							return 1;
 						}
 					}

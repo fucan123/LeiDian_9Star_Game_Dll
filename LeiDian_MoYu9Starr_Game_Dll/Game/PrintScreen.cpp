@@ -308,8 +308,12 @@ int PrintScreen::SaveBitmapToFile(HBITMAP hBitmap, LPCWSTR lpFileName)
 	//创建位图文件     
 	fh = CreateFile(lpFileName, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS,
 		FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
-	if (fh == INVALID_HANDLE_VALUE)
+	if (fh == INVALID_HANDLE_VALUE) {
+		setlocale(LC_ALL, "");
+		printf("创建截图文件失败.%ws %d\n", lpFileName, GetLastError());
 		return   FALSE;
+	}
+
 	//设置位图文件头     
 	bmfHdr.bfType = 0x4D42;   //   "BM"     
 	dwDIBSize = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + dwBmBitsSize;

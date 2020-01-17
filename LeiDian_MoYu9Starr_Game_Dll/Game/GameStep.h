@@ -94,6 +94,8 @@ public:
 	_step_* Prev(Link<_step_*>& link);
 	// 完成正在执行步骤 返回下一个
 	_step_* CompleteExec(Link<_step_*>& link);
+	// 获取下一个操作数据
+	_step_* GetNext(Link<_step_*>& link);
 	// 获得当前步骤操作码
 	STEP_CODE CurrentCode(Link<_step_*>& link);
 	// 获得下一步骤操作码

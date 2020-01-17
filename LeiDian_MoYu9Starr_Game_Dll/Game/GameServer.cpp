@@ -311,7 +311,7 @@ void GameServer::GetXL(_account_* p, const char * data, int len)
 	wchar_t log[64];
 	p->XL = data ? P2INT(data) : 0;
 	printf("%hs 拥有项链:%d (%d/%d)\n", p->Name, p->XL, m_iRecvXL+1, m_iSendXL);
-	LOGVARP(log, L"%hs拥有项链:%d", p->Name, p->XL);
+	LOGVARP(log, L"%hs拥有项链:%d (%d/%d)", p->Name, p->XL, m_iRecvXL + 1, m_iSendXL);
 
 	if (++m_iRecvXL >= m_iSendXL) {
 		bool big_in = false; // 是否大号进
@@ -327,7 +327,7 @@ void GameServer::GetXL(_account_* p, const char * data, int len)
 			}
 			
 			m_pGame->m_pGameProc->OpenFB();
-			InFB(m_pGame->m_pBig, nullptr, 0);
+			//InFB(m_pGame->m_pBig, nullptr, 0);
 			return;
 		}
 
@@ -401,6 +401,9 @@ void GameServer::OffLine(_account_ * p, const char * data, int len)
 // 询问项链数量
 void GameServer::AskXLCount()
 {
+	if (m_pGame->ClockShutDown(0))
+		return;
+
 	wchar_t log[64];
 	if (!m_pGame->m_pHome->IsValid()) {
 		LOGVARP2(log, "red", L"卡号已过期, 请激活");

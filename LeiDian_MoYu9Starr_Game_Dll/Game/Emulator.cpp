@@ -15,6 +15,7 @@ Emulator::Emulator(Game* p)
 {
 	m_pGame = p;
 
+	m_bIsGetList = false;
 	m_nCount = 0;
 	ZeroMemory(m_List, sizeof(m_List));
 }
@@ -438,7 +439,7 @@ _end_:
 // list2命令
 int Emulator::List2()
 {
-	while (m_bIsGetList);
+	//while (m_bIsGetList);
 	//printf("Emulator::List2()\n");
 	m_bIsGetList = true;
 	m_nCount = List2(m_List, sizeof(m_List) / sizeof(MNQ));
@@ -478,7 +479,13 @@ int Emulator::List2(MNQ* mnq, int length)
 					int account_index = 0;// Getprop("account_index", count, -1);
 					m->Account = m_pGame->GetAccount(account_index);
 
-					LOGVARN2(64, "c0 b", L"模拟器已启动, 绑定到大号.");
+					if (m->Account) {
+						LOGVARN2(64, "green b", L"模拟器已启动, 绑定到大号:%hs.", m->Account->Name);
+					}
+					else {
+						LOGVARN2(64, "red b", L"模拟器已启动, 未能绑定到大号.");
+					}
+					
 					//printf("xxx:%d\n", account_index);
 					if (m->Account) {
 						m->Account->IsLogin = 1;

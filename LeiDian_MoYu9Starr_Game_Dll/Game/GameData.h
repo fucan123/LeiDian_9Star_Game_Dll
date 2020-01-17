@@ -37,7 +37,7 @@ typedef struct conf_item_info
 {
 	CHAR      Name[32];
 	DWORD     Type;
-	DWORD     Level;
+	DWORD     Extra[2];   
 } ConfItemInfo;
 
 typedef struct game_data_addr

@@ -27,13 +27,19 @@ void GameData::WatchGame()
 	wchar_t log[128];
 	while (true) {
 		int length = m_pGame->m_pEmulator->List2();
+		//DbgPrint("模拟器数量:%d\n", length);
 		for (int i = 0; i < length; i++) {
 			MNQ* m = m_pGame->m_pEmulator->GetMNQ(i);
-			if (!m || m->VBoxPid <= 0)
+			if (!m || m->VBoxPid <= 0) {
+				//DbgPrint("模拟器未启动\n");
 				continue;
-			if (!m->Account || !m->Account->IsLogin || m->Account->IsGetAddr)
+			}
+				
+			if (!m->Account || !m->Account->IsLogin || m->Account->IsGetAddr) {
+				//DbgPrint("帐号未登录:%p %d %d\n", m->Account, m->Account->IsLogin, m->Account->IsGetAddr);
 				continue;
-
+			}
+				
 			ZeroMemory(&m_DataAddr, sizeof(m_DataAddr));
 			m_hGameProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, m->VBoxPid);
 			DbgPrint("%hs读取[%hs(%d)]数据\n", m->Account->Name, m->Name, m->VBoxPid);
@@ -179,20 +185,27 @@ bool GameData::FindPlayerAddr()
 
 	// 4:0x00000000 4:0x0000DECE 4:0x00000000 4:0x00000001 4:0x00000000 4:0x00000030 4:0x00000000 4:0x0000DECE 4:0x00000000 4:0x00000001 4:0x00000000 4:0x00000030
 	DWORD codes[] = {
-		0x0729E9F0, 0x00000000, 0xFFFFFFFF, 0x3F800000,
+		0x07301234, 0x00000000, 0xFFFFFFFF, 0x3F800000,
 		0x00010001, 0x00000011, 0x00000011, 0x00000011,
 	};
 	DWORD address = 0;
 	if (SearchCode(codes, sizeof(codes) / sizeof(DWORD), &address)) {
-		m_DataAddr.Player = address;
-		m_DataAddr.Name = m_DataAddr.Player + NAME_OFFSET;
-		m_DataAddr.CoorX = m_DataAddr.Player + X_OFFSET;
-		m_DataAddr.CoorY = m_DataAddr.Player + Y_OFFSET;
-		m_DataAddr.Life = m_DataAddr.Player + LIFE_OFFSET;
-		m_DataAddr.LifeMax = m_DataAddr.Player + LIFE_MAX_OFFSET;
+		DWORD data = 0;
+		bool result = ReadProcessMemory(m_hGameProcess, (LPVOID)address, &data, sizeof(data), NULL);
+		if ((data & 0x0fff) == 0x08A8) {
+			//LOGVARN2(32, "blue", L"人物首地址:%08X %08X", address, address & 0x0fff);
+			if ((address & 0x0fff) == 0x0000) {
+				m_DataAddr.Player = address;
+				m_DataAddr.Name = m_DataAddr.Player + NAME_OFFSET;
+				m_DataAddr.CoorX = m_DataAddr.Player + X_OFFSET;
+				m_DataAddr.CoorY = m_DataAddr.Player + Y_OFFSET;
+				m_DataAddr.Life = m_DataAddr.Player + LIFE_OFFSET;
+				m_DataAddr.LifeMax = m_DataAddr.Player + LIFE_MAX_OFFSET;
 
-		LOGVARN2(32, "blue", L"人物首地址:%08X", m_DataAddr.Player);
-		DbgPrint("人物首地址:%08X\n", m_DataAddr.Player);
+				LOGVARN2(32, "blue", L"人物首地址:%08X", m_DataAddr.Player);
+				DbgPrint("人物首地址:%08X\n", m_DataAddr.Player);
+			}
+		}
 	}
 
 	return address != 0;
@@ -203,17 +216,20 @@ bool GameData::FindMoveCoorAddr()
 {
 	// 4:0x00000000 4:0x00000000 4:0x00000000 4:0x07328EF4 4:0x07328EF4
 	DWORD codes[] = {
-		0x073012F0, 0x073012E8, 0x00000011, 0x00000011,
-		0x00000000, 0x00000000, 0x07301308, 0x07301300,
-		0x00000000, 0x00000011, 0x00000000, 0x00000011,
+		0x00000000, 0x00000000, 0x00000000, 0x00000011,
+		0x07361234, 0x07361234, 0x00000000, 0x00000011,
+		0x00000022, 0x00000022, 0x00000022, 0x00000011,
 	};
 	DWORD address = 0;
 	if (SearchCode(codes, sizeof(codes) / sizeof(DWORD), &address)) {
-		m_DataAddr.MoveX = address + 0x40;
-		m_DataAddr.MoveY = m_DataAddr.MoveX + 4;
+		//LOGVARN2(32, "blue", L"目的地坐标地址:%08X %08X", address, address&0x0f);
+		if ((address & 0x0f) == 0x08) {
+			m_DataAddr.MoveX = address + 0x30;
+			m_DataAddr.MoveY = m_DataAddr.MoveX + 4;
 
-		LOGVARN2(32, "blue", L"目的地坐标地址:%08X", m_DataAddr.MoveX);
-		DbgPrint("目的地坐标地址:%08X\n", m_DataAddr.MoveX);
+			LOGVARN2(32, "blue", L"目的地坐标地址:%08X", m_DataAddr.MoveX);
+			DbgPrint("目的地坐标地址:%08X\n", m_DataAddr.MoveX);
+		}
 	}
 
 	return address != 0;

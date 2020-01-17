@@ -10,7 +10,12 @@
 #define P2DW(v) (*(DWORD*)(v))       // 转成DWORD数值
 #define P2INT(v) (*(int*)(v))        // 转成int数值
 
+#if 0
 #define DbgPrint(...) ::printf(__VA_ARGS__)
+#else
+#define DbgPrint(...)
+#endif
+
 #define LOG(v) m_pGame->AddUILog(v,nullptr)
 #define LOGVARP(p,...) { wsprintfW(p,__VA_ARGS__);LOG(p); }
 #define LOGVARN(n,...) {wchar_t _s[n]; _s[n-1]=0; LOGVARP(_s,__VA_ARGS__); }
@@ -219,6 +224,10 @@ public:
 	void UpdateDBFB(int count=-1);
 	// 更新刷副本时长
 	void UpdateDBFBTimeLong(int time_long);
+	// 插入副本记录
+	void InsertFBRecord(int start_time, int end_time, int status);
+	// 查询副本记录
+	int SelectFBRecord(char*** result, int* col);
 
 	// 更新重开副本次数
 	void UpdateReOpenFBCount(int count);
@@ -294,6 +303,9 @@ public:
 	void FormatTimeLong(char* text, int time_long);
 	// 时长转成文字
 	void FormatTimeLong(wchar_t* text, int time_long);
+
+	// 截图
+	void SaveScreen(const char* name);
 public:
 	// 观察是否进入游戏
 	static DWORD WINAPI WatchInGame(LPVOID);

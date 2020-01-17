@@ -35,7 +35,8 @@ void Talk::SelectNPC(int no)
 DWORD Talk::NPC(const char* name)
 {
 	// 对话按钮坐标[875,340 912,388]
-	m_pGame->m_pGameProc->Click(875, 350, 912, 376);
+	m_pGame->m_pEmulator->Tap(MyRand(875, 912), MyRand(350, 376));
+	//m_pGame->m_pGameProc->Click(875, 350, 912, 376);
 	return 0;
 }
 
@@ -46,15 +47,18 @@ void Talk::Select(DWORD no)
 	// 第二个 67,425 456,460
 	// 第三个 67,425 456,460
 	if (no == 0) {
-		m_pGame->m_pGameProc->Click(67, 360, 368, 393);
+		m_pGame->m_pEmulator->Tap(MyRand(67, 368), MyRand(360, 393));
+		//m_pGame->m_pGameProc->Click(67, 360, 368, 393);
 		return;
 	}
 	if (no == 1) {
-		m_pGame->m_pGameProc->Click(67, 425, 368, 460);
+		m_pGame->m_pEmulator->Tap(MyRand(67, 368), MyRand(425, 460));
+		//m_pGame->m_pGameProc->Click(67, 425, 368, 460);
 		return;
 	}
 	if (no == 2) {
-		m_pGame->m_pGameProc->Click(67, 503, 368, 535);
+		m_pGame->m_pEmulator->Tap(MyRand(67, 368), MyRand(503, 535));
+		//m_pGame->m_pGameProc->Click(67, 503, 368, 535);
 		return;
 	}
 }

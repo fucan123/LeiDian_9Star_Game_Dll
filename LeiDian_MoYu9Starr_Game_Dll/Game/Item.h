@@ -49,12 +49,14 @@ public:
 	bool ChaiFeiBtnIsOpen();
 	// 关闭拆分框
 	void CloseChaiFeiBox();
+	// 点击按钮捡东西
+	void PickUpItemByBtn();
 	// 捡物
 	int PickUpItem(const char* name, int x, int y, int x2, int y2, int pickup_num=10);
 	// 等待捡起物品
 	int WaitForPickUpItem(DWORD wait_ms=3500);
 	// 获取地面物品坐标
-	int GetGroundItemPos(const char* name, int x, int y, int x2, int y2, int& pos_x, int& pos_y);
+	int GetGroundItemPos(const char* name, int x, int y, int x2, int y2, int& pos_x, int& pos_y, char* pick_name);
 	// 丢弃药包
 	int  DropItem(ComImgIndex index, int live_count=6, DWORD* ms=nullptr);
 	// 使用物品

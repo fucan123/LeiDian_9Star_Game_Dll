@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <memory.h>
 #include <time.h>
+#include <My/Common/func.h>
 #include <My/Common/mystring.h>
 #include <My/Common/OpenTextFile.h>
 #include <My/Common/Explode.h>
@@ -93,6 +94,7 @@ void Game::Listen(USHORT port)
 #if 1
 void Game::Run()
 {
+	//DbgPrint("Game::Run!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
 	if (!m_pGameProc->InitSteps()) {
 		DbgPrint("初始化步骤失败，无法继续运行！！！\n");
 		LOG2(L"初始化步骤失败，无法继续运行！！！", "red");
@@ -110,13 +112,19 @@ void Game::Run()
 		return;
 	}
 
-	while (!m_pGame->m_pHome->IsValid()) Sleep(1000);
+	//DbgPrint("!m_pGame->m_pHome->IsValid()!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+	while (!m_pGame->m_pHome->IsValid()) {
+		//DbgPrint("Run:未激活\n");
+		Sleep(1000);
+	}
 
+	//DbgPrint("!m_pEmulator->List2!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
 	m_pEmulator->List2();
 	m_pGameData->m_pAccoutBig = m_pBig; // 大号
 	m_pBig->IsLogin = 1;
 	//LogOut(m_pBig);
 	//while (true) Sleep(1000);
+	//DbgPrint("!m_pGameData->WatchGame!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
 	m_pGameData->WatchGame();
 
 	while (true) {
@@ -307,7 +315,7 @@ void Game::LogOut(Account * account)
 		return;
 
 	DbgPrint("\n退出登录.\n\n");
-	LOG2(L"\n退出登录.\n", "red");
+	LOG2(L"\n退出登录.\n", "red b");
 	m_pEmulator->Tap(1206, 190, 1230, 215, account->Mnq->Index); // 右侧展开菜单
 	Sleep(2000);
 	m_pEmulator->Tap(1208, 645, 1230, 670, account->Mnq->Index); // 设置
@@ -464,9 +472,11 @@ int Game::CheckLoginTimeOut()
 		
 	// 获取模拟器
 	m_pEmulator->List2();
+#if 0
 	// 定时关机
 	if (ClockShutDown(1))
 		return 0;
+#endif
 	// 定时下线
 	if (IsInTime(m_Setting.OffLine_SH, m_Setting.OffLine_SM, m_Setting.OffLine_EH, m_Setting.OffLine_EM)) {
 		if (GetOnLineCount() > 0) {
@@ -964,6 +974,15 @@ void Game::CheckDB()
 			"id integer primary key autoincrement, "\
 			"time_long integer)");
 	}
+	if (!m_pSqlite->TableIsExists("fb_record")) {
+		m_pSqlite->Exec("create table fb_record("\
+			"id integer primary key autoincrement, "\
+			"start_time integer,"\
+			"end_time integer,"\
+			"time_long integer,"\
+			"status integer)"
+		);
+	}
 }
 
 // 更新物品信息
@@ -1016,6 +1035,21 @@ void Game::UpdateDBFBTimeLong(int time_long)
 		sprintf_s(sql, "UPDATE fb_time_long SET time_long=time_long+%d WHERE id=1", time_long);
 		m_pSqlite->Exec(sql);
 	}
+}
+
+// 插入副本记录 status=0正常通关 1-复活重开 2-卡住超时
+void Game::InsertFBRecord(int start_time, int end_time, int status)
+{
+	char sql[128];
+	sprintf_s(sql, "INSERT INTO fb_record(start_time,end_time,time_long,status) VALUES (%d,%d,%d,%d)", 
+		start_time, end_time, end_time-start_time, status);
+	m_pSqlite->Exec(sql);
+}
+
+// 查询副本记录
+int Game::SelectFBRecord(char*** result, int* col)
+{
+	return m_pSqlite->SelectAll("SELECT * FROM fb_record order by id desc", result, col);
 }
 
 // 更新重开副本次数
@@ -1324,6 +1358,7 @@ bool Game::ClockShutDown(int flag)
 // 关机
 void Game::ShutDown()
 {
+	SaveScreen("关机");
 	system("shutdown -s -t 10");
 }
 
@@ -1730,6 +1765,31 @@ void Game::FormatTimeLong(wchar_t* text, int time_long)
 	else {
 		wsprintfW(text, L"%d小时%02d分%02d秒", (c % 86400) / 3600, (c % 3600) / 60, c % 60);
 	}
+}
+
+// 截图
+void Game::SaveScreen(const char* name)
+{
+	// 文件名不能有:号
+	char floder[256], file[256];
+	sprintf_s(floder, "%s\\截图", m_chPath);
+	if (!IsFileExistA(floder)) {
+		CreateDirectoryA(floder, NULL);
+	}
+
+	SYSTEMTIME t;
+	::GetLocalTime(&t); // 获得当前时间
+	sprintf_s(file, "%s\\%s(%d年%d月%d日 %d点%d分%d秒).bmp", floder, name,
+		t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond);
+
+	CString csFile;
+	csFile = file;
+
+	RECT rect;
+	::GetWindowRect(::GetDesktopWindow(), &rect);
+	HBITMAP hBitmap = m_pPrintScreen->CopyScreenToBitmap(&rect, false);
+	m_pPrintScreen->SaveBitmapToFile(hBitmap, csFile);
+	m_pPrintScreen->Release();
 }
 
 // 观察是否进入游戏

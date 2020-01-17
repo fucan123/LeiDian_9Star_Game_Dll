@@ -19,6 +19,8 @@ private:
 	void ReadPickUp(const char* data);
 	// 读取使用物品
 	void ReadUse(const char* data);
+	// 读取丢弃物品
+	void ReadDrop(const char* data);
 	// 读取售卖物品
 	void ReadSell(const char* data);
 	// 读取存入物品
@@ -49,6 +51,12 @@ public:
 		ConfItemInfo Uses[MAX_CONF_ITEMS];
 		DWORD        Length;
 	} m_stUse;
+
+	// 丢弃物品列表
+	struct {
+		ConfItemInfo Drops[MAX_CONF_ITEMS];
+		DWORD        Length;
+	} m_stDrop;
 
 	// 售卖物品列表
 	struct {

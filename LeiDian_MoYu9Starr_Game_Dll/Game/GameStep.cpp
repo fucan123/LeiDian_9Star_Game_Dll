@@ -45,6 +45,15 @@ _step_* GameStep::CompleteExec(Link<_step_*>& link)
 	return Current(link);
 }
 
+// 获取下一个操作数据
+_step_* GameStep::GetNext(Link<_step_*>& link)
+{
+	link.Store();
+	NODE<_step_*>* p = link.Next();
+	link.ReStore();
+	return p ? p->value : nullptr;
+}
+
 // 获得当前步骤操作码
 STEP_CODE GameStep::CurrentCode(Link<_step_*>& link)
 {

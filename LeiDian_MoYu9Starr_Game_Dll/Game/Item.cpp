@@ -1,4 +1,5 @@
 #include "Game.h"
+#include "GameConf.h"
 #include "Item.h"
 #include "Talk.h"
 #include "PrintScreen.h"
@@ -230,17 +231,25 @@ void Item::CloseChaiFeiBox()
 	m_pGame->m_pGameProc->Click(466, 505, 566, 515);
 }
 
+// 点击按钮捡东西
+void Item::PickUpItemByBtn()
+{
+	m_pGame->m_pEmulator->Tap(MyRand(26, 35), MyRand(656, 675));
+	WaitForPickUpItem();
+}
+
 // 捡物
 int Item::PickUpItem(const char* name, int x, int y, int x2, int y2, int pickup_num)
 {
 	int count = 0;
 	for (int i = 1; i <= pickup_num; i++) {
+		char pick_name[64] = { 0 };
 		int pos_x = 0, pos_y = 0;
-		if (!GetGroundItemPos(name, x, y, x2, y2, pos_x, pos_y))
+		if (!GetGroundItemPos(name, x, y, x2, y2, pos_x, pos_y, pick_name))
 			break;
 
-		DbgPrint("%d.捡东西:%s(%d,%d)\n", i, name, pos_x, pos_y);
-		LOGVARN2(64, "c0", L"%d.捡东西:%hs(%d,%d)", i, name, pos_x, pos_y);
+		DbgPrint("%d.捡东西:%s(%d,%d)\n", i, pick_name, pos_x, pos_y);
+		LOGVARN2(64, "c0", L"%d.捡东西:%hs(%d,%d)", i, pick_name, pos_x, pos_y);
 		m_pGame->m_pGameProc->Click(pos_x, pos_y);
 		WaitForPickUpItem();
 		count++;
@@ -256,8 +265,8 @@ int Item::WaitForPickUpItem(DWORD wait_ms)
 {
 	DWORD x = 0, y = 0;
 	m_pGame->m_pGameData->ReadCoor(&x, &y, m_pGame->m_pGameProc->m_pAccount);
-	for (DWORD i = 0; i <= wait_ms; i += 800) {
-		Sleep(800);
+	for (DWORD i = 0; i <= wait_ms; i += 680) {
+		Sleep(680);
 
 		DWORD now_x = 0, now_y = 0;
 		m_pGame->m_pGameData->ReadCoor(&now_x, &now_y, m_pGame->m_pGameProc->m_pAccount);
@@ -271,41 +280,116 @@ int Item::WaitForPickUpItem(DWORD wait_ms)
 }
 
 // 获取地面物品坐标
-int Item::GetGroundItemPos(const char* name, int x, int y, int x2, int y2, int& pos_x, int& pos_y)
+int Item::GetGroundItemPos(const char* name, int x, int y, int x2, int y2, int& pos_x, int& pos_y, char* pick_name)
 {
-	if (!x || !y || !x2 || !y2)
-		return 0;
-
-	//DbgPrint("捡物截图:%s(%d,%d %d,%d)\n", name, x, y, x2, y2);
-	int tmp_x = 0, tmp_y = 0, tmp_x2 = 0, tmp_y2 = 0;
+	if (!x || !y || !x2 || !y2) {
+		x = 360;
+		y = 150;
+		x2 = 880;
+		y2 = 576;
+	}
 	m_pGame->m_pPrintScreen->CopyScreenToBitmap(m_pGame->m_pGameProc->m_hWndGame, x, y, x2, y2, 0, true);
-	if (strcmp("速效圣兽灵药", name) == 0) {
-		if (m_pGame->m_pPrintScreen->GetPixelPos(0xFF72AA23, tmp_x, tmp_y, 0x00101010)) {
-			m_pGame->m_pPrintScreen->GetPixelPos(0xFF528A03, tmp_x2, tmp_y2, 0x00101010);
-		}
-		//DbgPrint("%s:%d,%d %d,%d\n", name, tmp_x, tmp_y, tmp_x2, tmp_y2);
-	}
-	else if (strcmp("30星神兽碎片+3", name) == 0) {
-		if (m_pGame->m_pPrintScreen->GetPixelPos(0xB885CA, tmp_x, tmp_y, 0x00080808)) {
-			//m_pGame->m_pPrintScreen->GetPixelPos(0xF5C5FB, tmp_x2, tmp_y2, 0x00101010);
-		}
-		//DbgPrint("%s:%d,%d %d,%d\n", name, tmp_x, tmp_y, tmp_x2, tmp_y2);
-	}
-	if ((tmp_x && tmp_y) || (tmp_x2 && tmp_y2)) {
-		//DbgPrint("发现物品:%s, 坐标:%d,%d 坐标2:%d,%d\n", name, tmp_x, tmp_y, tmp_x2, tmp_y2);
 
-		if (tmp_x) {
-			pos_x = tmp_x;
-			pos_y = tmp_y;
-		}
-		else {
-			pos_x = tmp_x2;
-			pos_y = tmp_y2;
-		}
-			
-		return 1;
-	}
+	wchar_t log[128];
+	ConfItemInfo* items = m_pGame->m_pGameConf->m_stPickUp.PickUps; // 配置捡东西物品
+	int length = m_pGame->m_pGameConf->m_stPickUp.Length; // 捡东西物品数量
+	//LOGVARP2(log, "orange b", L"捡东西数量:%d (%d,%d)-(%d,%d)", length, x, y, x2, y2);
+	for (int i = 0; i < length; i++) {
+		if (m_pGame->m_pGameProc->m_bPause)
+			return 0;
 
+		if (!strstr(name, ".") && strcmp(name, items[i].Name) != 0)
+			continue;
+		if (strcmp(name, "...") == 0 && strcmp("30星神兽碎片+3", items[i].Name) == 0)
+			continue;
+		if (strcmp(name, ".") == 0) { // 最后一关
+			if (strcmp("30星神兽碎片+2", items[i].Name) != 0 && strcmp("30星神兽碎片+3", items[i].Name) != 0)
+				continue;
+		}
+		if (strcmp(name, "速效治疗包") == 0) {
+			int yaobao = 0, yao = 0;
+			GetQuickYaoOrBaoNum(yaobao, yao);
+			if (yaobao >= 7) {
+				LOGVARP2(log, "blue_r b", L"无须再俭药包, 数量:%d\n", yaobao);
+				return 0;
+			}	
+		}
+
+		strcpy(pick_name, items[i].Name);
+		if (0 && !strstr(name, "."))
+			LOGVARP2(log, "orange b", L"识别物品:%hs(%hs)", pick_name, items[i].Name);
+		DWORD color = 0x00000000, diff = 0x00000000;
+		int tmp_x = 0, tmp_y = 0, tmp_x2 = 0, tmp_y2 = 0;
+		if (strcmp("速效圣兽灵药", pick_name) == 0) {
+			color = 0xFF72AA23;
+			diff = 0x00080808;
+		}
+		else if (strcmp("6星O礼包", pick_name) == 0) {
+			//color = 0xFFBDA392;
+			diff = 0x00080808;
+		}
+		else if (strcmp("12星XO礼包", pick_name) == 0) {
+			//color = 0xFF5AB6DF;
+			diff = 0x00080808;
+		}
+		else if (strcmp("25星XO礼包", pick_name) == 0) {
+			color = 0xFF667EBE;
+			diff = 0x00010101;
+		}
+		else if (strcmp("30星神兽碎片+1", pick_name) == 0) {
+			color = 0xFFB6936B;
+			diff = 0x00010101;
+		}
+		else if (strcmp("30星神兽碎片+2", pick_name) == 0) {
+			color = 0xFF6278B2;
+			diff = 0x00030303;
+		}
+		else if (strcmp("30星神兽碎片+3", pick_name) == 0) {
+			color = 0xFFB885CA;
+			diff = 0x00080808;
+		}
+		else if (strcmp("幻魔晶石", pick_name) == 0) {
+			color = 0xFFE352ED;
+			diff = 0x00020202;
+		}
+		else if (strcmp("魔魂晶石", pick_name) == 0) {
+			color = 0xFFF5E880;
+			diff = 0x00020202;
+		}
+		else if (strcmp("灵魂晶石", pick_name) == 0) {
+			color = 0xFFF7C68E;
+			diff = 0x00030303;
+		}
+		else if (strcmp("速效治疗包", pick_name) == 0) {
+			if (!strstr(name, ".")) {
+				color = 0xFFF66A6D;
+				diff = 0x00101010;
+			}
+			else {
+				color = 0xFFF66A6D;
+				diff = 0x00030303;
+			}
+		}
+		if (color == 0x00000000)
+			continue;
+
+		m_pGame->m_pPrintScreen->GetPixelPos(color, tmp_x, tmp_y, diff);
+		if ((tmp_x && tmp_y) || (tmp_x2 && tmp_y2)) {
+			//DbgPrint("发现物品:%s, 坐标:%d,%d 坐标2:%d,%d\n", name, tmp_x, tmp_y, tmp_x2, tmp_y2);
+			if (tmp_x) {
+				pos_x = tmp_x;
+				pos_y = tmp_y;
+			}
+			else {
+				pos_x = tmp_x2;
+				pos_y = tmp_y2;
+			}
+
+			return 1;
+		}
+	}
+	//DbgPrint("捡物截图:%s(%d,%d %d,%d)\n", name, x, y, x2, y2);
+	
 	return 0;
 }
 
@@ -319,13 +403,6 @@ int Item::DropItem(ComImgIndex index, int live_count, DWORD* ms)
 
 	Sleep(300);
 
-	// 30星神兽碎片+2会使用不会丢弃 蓝色祝福碎片跟30星神兽碎片+2一个样 紫色祝福跟30星神兽碎片+3一个样
-	char drops[][32] = {
-		"四百点图鉴卡", "复仇骑士的挂坠", "钥匙",
-		"卡利亚手记", "清凉的圣水", "巴力混沌发型包", "精英骑士纹章",
-		"30星神兽碎片+1", "30星神兽碎片+2", "紫色祝福碎片"
-	};
-	int drops_num = sizeof(drops)/ sizeof(drops[0]);
 	int count = 0; // 数量
 	for (int i = 0; i <= 5; i++) {
 		if (!BagIsOpen() || m_pGame->m_pGameProc->m_bPause)
@@ -335,16 +412,21 @@ int Item::DropItem(ComImgIndex index, int live_count, DWORD* ms)
 			Sleep(200);
 		}
 
-		for (int idx = 0; idx < drops_num; idx++) {
-			if (i > 0 && strcmp("紫色祝福碎片", drops[idx]) == 0)
+		ConfItemInfo* items = m_pGame->m_pGameConf->m_stDrop.Drops;
+		int length = m_pGame->m_pGameConf->m_stDrop.Length;
+		int idx = 0;
+		for (idx = 0; idx < length; idx++) {
+			if (i > 0 && strcmp("紫色祝福碎片", items[idx].Name) == 0)
 				continue;
 
 			ComPoint cp[32];
 			PrintBagImg(true); // 截取背包图片
-			int num = m_pGame->m_pPrintScreen->ComparePixel(drops[idx], cp, sizeof(cp) / sizeof(ComPoint));
+			int num = m_pGame->m_pPrintScreen->ComparePixel(items[idx].Name, cp, sizeof(cp) / sizeof(ComPoint));
 			if (num == 0)
 				continue;
-			if (num == 1 && strcmp(drops[idx], "钥匙") == 0) // 钥匙只有一把不能丢
+			if (num == 1 && strcmp(items[idx].Name, "钥匙") == 0) // 钥匙只有一把不能丢
+				continue;
+			if (num <= 6 && strcmp(items[idx].Name, "速效治疗包") == 0)
 				continue;
 			//m_pGame->m_pPrintScreen->SaveBitmapToFile(bitmap, L"C:\\Users\\fucan\\Desktop\\MNQ-9Star\\jt.bmp");
 			//DbgPrint("%d.丢.%s.背包物品数量:%d\n", i + 1, drops[idx], num);
@@ -357,41 +439,62 @@ int Item::DropItem(ComImgIndex index, int live_count, DWORD* ms)
 			else {
 				drop_num = count + num - live_count;
 			}
-			drop_num = strcmp(drops[idx], "钥匙") != 0 ? num : 1; // 钥匙只丢最前面那一把
+			drop_num = strcmp(items[idx].Name, "钥匙") != 0 ? num : 1; // 钥匙只丢最前面那一把
+			if (strcmp(items[idx].Name, "速效治疗包") == 0)
+				drop_num = num - 6;
 
 			int btn_index = 1;
-			if (strcmp("钥匙", drops[idx]) == 0 || strcmp("清凉的圣水", drops[idx]) == 0) // 只有一个操作按钮
-				btn_index = 0;
-			else if (strstr(drops[idx], "30星神兽碎片")) // 这个使用
+			if (strcmp("钥匙", items[idx].Name) == 0 || strcmp("清凉的圣水", items[idx].Name) == 0) // 只有一个操作按钮
 				btn_index = 0;
 
 			for (int j = 0; j < drop_num; j++) {
 				if (j == 0) {
-					if (strstr(drops[idx], "30星神兽碎片")) {
-						UseItem(drops[idx], cp[0].x, cp[0].y);
-					}
-					else {
-						DropItem(drops[idx], cp[0].x, cp[0].y, btn_index);
-					}
+					DropItem(items[idx].Name, cp[0].x, cp[0].y, btn_index);
 				}
 				else {
 					ComPoint item[1];
 					PrintBagImg(true); // 截取背包图片
-					if (!m_pGame->m_pPrintScreen->ComparePixel(drops[idx], item, sizeof(item) / sizeof(ComPoint)))
+					if (!m_pGame->m_pPrintScreen->ComparePixel(items[idx].Name, item, sizeof(item) / sizeof(ComPoint)))
 						break;
 
-					if (strstr(drops[idx], "30星神兽碎片")) {
-						UseItem(drops[idx], item[0].x, item[0].y);
-					}
-					else {
-						DropItem(drops[idx],item[0].x, item[0].y, btn_index);
-					}
+						DropItem(items[idx].Name, item[0].x, item[0].y, btn_index);
 				}
 				Sleep(600);
 
-				if (strstr(drops[idx], "30星神兽碎片")) {
-					m_pGame->m_pGameProc->CloseTipBox();
+				if (ChaiFeiBtnIsOpen()) {
+					CloseChaiFeiBox();
+					Sleep(300);
 				}
+			}
+			count += num;
+
+			m_pGame->m_pGameProc->CloseTipBox();
+		}
+
+		items = m_pGame->m_pGameConf->m_stUse.Uses;
+		length = m_pGame->m_pGameConf->m_stUse.Length;
+		for (idx = 0; idx < length; idx++) {
+			ComPoint cp[32];
+			PrintBagImg(true); // 截取背包图片
+			int num = m_pGame->m_pPrintScreen->ComparePixel(items[idx].Name, cp, sizeof(cp) / sizeof(ComPoint));
+			if (num == 0)
+				continue;
+
+			for (int j = 0; j < num; j++) {
+				if (j == 0) {
+					UseItem(items[idx].Name, cp[0].x, cp[0].y);
+				}
+				else {
+					ComPoint item[1];
+					PrintBagImg(true); // 截取背包图片
+					if (!m_pGame->m_pPrintScreen->ComparePixel(items[idx].Name, item, sizeof(item) / sizeof(ComPoint)))
+						break;
+
+					UseItem(items[idx].Name, item[0].x, item[0].y);
+				}
+				Sleep(600);
+				
+				m_pGame->m_pGameProc->CloseTipBox();
 				if (ChaiFeiBtnIsOpen()) {
 					CloseChaiFeiBox();
 					Sleep(300);
@@ -413,7 +516,7 @@ int Item::DropItem(ComImgIndex index, int live_count, DWORD* ms)
 		Sleep(300);
 	}
 
-	Sleep(150);
+	Sleep(200);
 	CloseBag();
 
 	_tm = GetTickCount() - _tm;
@@ -422,7 +525,7 @@ int Item::DropItem(ComImgIndex index, int live_count, DWORD* ms)
 	}
 	
 	DbgPrint("丢弃物品用时:%.2f秒, %d毫秒\n", (float)_tm/1000.0f, _tm);
-	LOGVARN2(64, "c0", L"丢弃物品用时:%.2f秒, %d毫秒", (float)_tm / 1000.0f, _tm);
+	LOGVARN2(64, "c0", L"丢弃物品用时:%d秒, %d毫秒", _tm / 1000, _tm);
 	return count;
 }
 
@@ -433,7 +536,12 @@ void Item::UseItem(const char* name, int x, int y)
 	LOGVARN2(64, "c0", L"使用物品:%hs(%d,%d)", name, x, y);
 	m_pGame->m_pGameProc->Click(x, y);
 	if (WaitForItemBtnOpen()) {
-		Sleep(100);
+		Sleep(150);
+		// 点击物品出来操作按钮旁边的图标
+		m_pGame->m_pPrintScreen->CopyScreenToBitmap(m_pGame->m_pGameProc->m_hWndGame, 320, 82, 375, 145, 0, true);
+		if (m_pGame->m_pPrintScreen->ComparePixel("30星神兽碎片+3", nullptr, 1) > 0) // 不要去使用30星神兽碎片+3
+			return;
+
 		GetItemBtnPos(x, y, 0);
 		m_pGame->m_pGameProc->Click(x, y); // 点击使用按钮
 	}
@@ -567,11 +675,16 @@ void Item::CheckIn(ConfItemInfo* items, DWORD length)
 			Sleep(300);
 		}
 
+		int pet_yao = 0;
 		if (!pet_yao_1) {
 			PrintBagImg(true); // 截取背包图片
 			pet_yao_1 = m_pGame->m_pPrintScreen->ComparePixel("速效圣兽灵药", nullptr, 1) > 0;
+			pet_yao = pet_yao_1;
 		}
-		
+		else {
+			pet_yao = m_pGame->m_pPrintScreen->ComparePixel("速效圣兽灵药", nullptr, 1) > 0;
+		}
+
 		bool is_save = false; // 是否存了东西
 		for (DWORD iti = 0; iti < length; iti++) {
 			ComPoint cp[32];
@@ -601,7 +714,7 @@ void Item::CheckIn(ConfItemInfo* items, DWORD length)
 			}
 		}
 
-		if (is_save && pet_yao_1) {
+		if (is_save && pet_yao_1 && pet_yao) {
 			PrintBagImg(true); // 截取背包图片
 			pet_yao_2 = m_pGame->m_pPrintScreen->ComparePixel("速效圣兽灵药", nullptr, 1);
 		}
@@ -622,7 +735,7 @@ void Item::CheckIn(ConfItemInfo* items, DWORD length)
 
 	_tm = GetTickCount() - _tm;
 	DbgPrint("存物用时:%.2f秒, %d毫秒\n", (float)_tm / 1000.0f, _tm);
-	LOGVARN2(64, "c0", L"存物用时:%.2f秒, %d毫秒", (float)_tm / 1000.0f, _tm);
+	LOGVARN2(64, "c0", L"存物用时:%d秒, %d毫秒", _tm / 1000, _tm);
 }
 
 // 取出仓库
@@ -676,12 +789,21 @@ int Item::CheckOut(ConfItemInfo* items, DWORD length)
 			break;
 	}
 
-	Sleep(150);
+	LOG2(L"取物", "存钱");
+	m_pGame->m_pEmulator->Tap(186, 680); // 存钱按钮
+	Sleep(1000);
+	m_pGame->m_pEmulator->Tap(776, 385); // 滑块最右边
+	Sleep(500);
+	m_pGame->m_pEmulator->Tap(750, 320); // +号, 以免0存不起
+	Sleep(500);
+	m_pGame->m_pEmulator->Tap(700, 475); // 确定
+	Sleep(500);
+
 	CloseStorage();
 
 	_tm = GetTickCount() - _tm;
 	DbgPrint("取物用时:%.2f秒, %d毫秒\n", (float)_tm / 1000.0f, _tm);
-	LOGVARN2(64, "c0", L"取物用时:%.2f秒, %d毫秒", (float)_tm / 1000.0f, _tm);
+	LOGVARN2(64, "c0", L"取物用时:%d秒, %d毫秒", _tm / 1000, _tm);
 
 	return count;
 }
@@ -757,7 +879,7 @@ int Item::GetBagCount(ComImgIndex index)
 
 	_tm = GetTickCount() - _tm;
 	DbgPrint("获取物品用时:%.2f秒, %d毫秒\n", (float)_tm / 1000.0f, _tm);
-	LOGVARN2(64, "c0", L"获取物品用时:%.2f秒, %d毫秒", (float)_tm / 1000.0f, _tm);
+	LOGVARN2(64, "c0", L"获取物品用时:%d秒, %d毫秒", _tm / 1000, _tm);
 	return count;
 }
 
@@ -784,8 +906,7 @@ void Item::SwitchMagicQuickBar()
 	}
 #endif
 
-	m_pGame->m_pPrintScreen->CopyScreenToBitmap(m_pGame->m_hWndBig, 926, 510, 936, 520, 0, true);
-	if (m_pGame->m_pPrintScreen->ComparePixel("星辰之眼快捷栏", nullptr, 1)) { // 切换
+	if (QuickBarIsXingChen()) { // 切换
 		SwitchQuickBar(1);
 		Sleep(500);
 	}
@@ -794,8 +915,8 @@ void Item::SwitchMagicQuickBar()
 // 快捷栏是否有星辰之眼
 bool Item::QuickBarIsXingChen()
 {
-	m_pGame->m_pPrintScreen->CopyScreenToBitmap(m_pGame->m_hWndBig, 908, 602, 923, 617, 0, true);
-	return m_pGame->m_pPrintScreen->ComparePixel("星辰之眼") > 0;
+	m_pGame->m_pPrintScreen->CopyScreenToBitmap(m_pGame->m_hWndBig, 926, 510, 936, 520, 0, true);
+	return m_pGame->m_pPrintScreen->ComparePixel("星辰之眼快捷栏", nullptr, 1) > 0;
 }
 
 // 切换快捷栏

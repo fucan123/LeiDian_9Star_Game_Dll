@@ -22,7 +22,7 @@ using namespace std;
 struct _step_;
 struct _account_;
 
-enum ComImgIndex;
+enum ComImgIndex:int;
 
 class Game;
 class GameStep;
@@ -40,6 +40,8 @@ public:
 	void SwitchGameWnd(HWND);
 	// 切换游戏帐号
 	void SwitchGameAccount(_account_* account);
+	// 鼠标移动到游戏窗口位置
+	void SetGameCursorPos(int x, int y);
 	// 窗口置前
 	void SetForegroundWindow(HWND hwnd);
 	// 执行
@@ -226,9 +228,11 @@ public:
 	bool m_bIsResetRecordStep = false;
 	// 是否第一次移动, 需要点一下地图
 	bool m_bIsFirstMove = true;
-	// 是否重开副本
-	bool m_bReOpenFB = false;
+	// 是否玩副本
+	bool m_bPlayFB = true;
 
+	// 是否重开副本0-不重开 1-直接出去重开 2-退出登录再重开 
+	int m_nReOpenFB = 0;
 	// 重新移动次数
 	int m_nReMoveCount = 0;
 	// 药包数量

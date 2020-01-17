@@ -23,7 +23,7 @@ void WINAPI Game_Init(HWND hWnd, const char* conf_path)
 
 	printf("Game_Init\n");
 	game.Init(hWnd, conf_path);
-	//::MessageBoxA(NULL, "OK", "bbb", MB_OK);
+	//::MessageBox(NULL, "OK", "bbb", MB_OK);
 
 	CreateThread(NULL, NULL, PlayGame, NULL, NULL, NULL);
 	CreateThread(NULL, NULL, RunGame, NULL, NULL, NULL);
@@ -103,12 +103,23 @@ DLLEXPORT int WINAPI Game_VerifyCard(const wchar_t* card)
 	return 0;
 }
 
+// 查询副本记录
+DLLEXPORT int WINAPI Game_SelectFBRecord(char*** result, int* col)
+{
+	return game.SelectFBRecord(result, col);
+}
+
 // 玩游戏
 DWORD WINAPI PlayGame(LPVOID param)
 {
 	game.ReadConf();
 	game.UpdateFBCountText(0, false);
 	game.UpdateFBTimeLongText(0, 0);
+
+#if 0
+	int start_time = time(nullptr) - 6000;
+	game.InsertFBRecord(start_time, start_time + 1666, 0);
+#endif
 
 	while (true) {
 		game.CheckLoginTimeOut();

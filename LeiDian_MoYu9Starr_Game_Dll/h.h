@@ -27,6 +27,8 @@ extern "C" {
 	DLLEXPORT int WINAPI Game_PutSetting(const wchar_t* name, int v);
 	// 验证卡号
 	DLLEXPORT int WINAPI Game_VerifyCard(const wchar_t* card);
+	// 查询副本记录
+	DLLEXPORT int WINAPI Game_SelectFBRecord(char*** result, int* col);
 
 #ifdef __cplusplus
 }
