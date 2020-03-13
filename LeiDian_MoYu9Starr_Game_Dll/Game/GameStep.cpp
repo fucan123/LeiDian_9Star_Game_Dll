@@ -18,6 +18,7 @@ GameStep::GameStep()
 {
 	m_nStepRandIndex = -1;
 	m_nStepCount = 0;
+	ZeroMemory(m_NpcCoor, sizeof(m_NpcCoor));
 	//InitSteps();
 }
 
@@ -97,6 +98,135 @@ STEP_CODE GameStep::NextCode(vector<_step_*>& link)
 	return OP_UNKNOW;
 }
 #endif
+
+// 读取NPC坐标文件信息
+bool GameStep::ReadNPCCoor(const char * path)
+{
+	char file[255];
+	sprintf_s(file, "%s\\data\\coor.ini", path);
+
+	printf("NPC坐标文件:%s\n", file);
+	OpenTextFile hfile;
+	if (!hfile.Open(file)) {
+		printf("找不到'%s'文件！！！", file);
+		return false;
+	}
+
+	m_nNpcCoorCount = 0;
+	char key[64] = { 0 };
+	int npc_index = 0, coor_index = 0;
+	int length = 0;
+	char data[128];
+	while ((length = hfile.GetLine(data, 128)) > -1) {
+		//printf("length:%d\n", length);
+		if (length == 0) {
+			continue;
+		}
+
+		Explode line(":", data);
+		//printf("line:%d %s\n", line.GetCount(), line[0]);
+		if (line.GetCount() > 1) {
+			if (strstr(line[1], "开始")) { // 开始
+				strcpy(key, line[0]);
+				strcpy(m_NpcCoor[m_nNpcCoorCount].Name, line[0]);
+				//printf("读取%s开始\n", key);
+				continue;
+	
+			}
+			else if (strstr(line[1], "结束")) { // 结束
+				key[0] = 0;
+				m_nNpcCoorCount++;
+				//printf("读取%s结束\n", key);
+				//printf("\n");
+				continue;
+			}
+			
+		}
+		if (key[0]) {
+			Explode arr(" ", data);
+			if (arr.GetCount() > 1 && strstr(arr[0], "位置") && strstr(arr[1], "点击")) {
+				Explode pos(":", arr[0]);
+				Explode click(":", arr[1]);
+				if (pos.GetCount() > 1 && click.GetCount() > 1) {
+					_npc_coor_* pnc = &m_NpcCoor[m_nNpcCoorCount];
+
+					if (strstr(pos[1], "-")) { // 有两个位置
+						Explode pos2("-", pos[1]);
+						Explode pos_data(",", pos2[0]);
+						Explode pos_data2(",", pos2[1]);
+
+						pnc->Point[pnc->Length].MvX = pos_data.GetValue2Int(0);
+						pnc->Point[pnc->Length].MvY = pos_data.GetValue2Int(1);
+						pnc->Point[pnc->Length].MvX2 = pos_data2.GetValue2Int(0);
+						pnc->Point[pnc->Length].MvY2 = pos_data2.GetValue2Int(1);
+					}
+					else {
+						Explode pos_data(",", pos[1]);
+						pnc->Point[pnc->Length].MvX = pos_data.GetValue2Int(0);
+						pnc->Point[pnc->Length].MvY = pos_data.GetValue2Int(1);
+					}
+
+					if (strstr(click[1], "-")) { // 有两个点击
+						Explode click2("-", click[1]);
+						Explode click_data(",", click2[0]);
+						Explode click_data2(",", click2[1]);
+
+						pnc->Point[pnc->Length].ClkX = click_data.GetValue2Int(0);
+						pnc->Point[pnc->Length].ClkY = click_data.GetValue2Int(1);
+						pnc->Point[pnc->Length].ClkX2 = click_data2.GetValue2Int(0);
+						pnc->Point[pnc->Length].ClkY2 = click_data2.GetValue2Int(1);
+					}
+					else {
+						if (strstr(click[1], "自动计算")) {
+							pnc->Point[pnc->Length].ClkX = 0;
+							pnc->Point[pnc->Length].ClkY = 0;
+						}
+						else {
+							Explode click_data(",", click[1]);
+							pnc->Point[pnc->Length].ClkX = click_data.GetValue2Int(0);
+							pnc->Point[pnc->Length].ClkY = click_data.GetValue2Int(1);
+						}
+					}
+
+					int rand = 1;
+					if (arr.GetCount() > 2 && strstr(arr[2], "随机")) {
+						if (strstr(arr[2], "否"))
+							rand = 0;
+					}
+
+					if (0 && m_nNpcCoorCount < 50) {
+						printf("%d.%s %d.位置:%d,%d-%d,%d 点击:%d,%d-%d,%d 随机:%d\n", m_nNpcCoorCount + 1,
+							pnc->Name,
+							pnc->Length + 1,
+							pnc->Point[pnc->Length].MvX, pnc->Point[pnc->Length].MvY,
+							pnc->Point[pnc->Length].MvX2, pnc->Point[pnc->Length].MvY2,
+							pnc->Point[pnc->Length].ClkX, pnc->Point[pnc->Length].ClkY,
+							pnc->Point[pnc->Length].ClkX2, pnc->Point[pnc->Length].ClkY2,
+							rand);
+					}
+
+					pnc->Point[pnc->Length].Flag = rand;
+					pnc->MvLength += rand;
+					pnc->Length++;
+				}
+			}
+		}
+	}
+
+	hfile.Close();
+	return true;
+}
+
+// 获取NPC坐标信息
+_npc_coor_* GameStep::GetNpcCoor(const char * name)
+{
+	for (int i = 0; i < m_nNpcCoorCount; i++) {
+		if (strcmp(name, m_NpcCoor[i].Name) == 0)
+			return &m_NpcCoor[i];
+	}
+
+	return nullptr;
+}
 
 // 获取正在执行的流程文件名称
 char* GameStep::GetStepFileName()
@@ -248,6 +378,16 @@ int GameStep::ParseStep(const char* data, Link<_step_*>& link)
 			TransFormPos(explode[2], step.X2, step.Y2);
 			//printf("流程->移动:%d.%d至%d.%d\n", step.X, step.Y, step.X2, step.Y2);
 			break;
+		case OP_MOVENPC:
+			step.p_npc = GetNpcCoor(explode[1]);
+			if (!step.p_npc) {
+				printf("NPC (%s) 信息未找到.\n", explode[1]);
+				result = -1;
+			}
+			else {
+				printf("NPC (%s) 信息已找到.\n", step.p_npc->Name);
+			}
+			break;
 		case OP_NPC:
 			strcpy(step.NPCName, explode[1]);
 			if (explode.GetCount() > 2)
@@ -391,13 +531,15 @@ STEP_CODE GameStep::TransFormOP(const char* data)
 {
 	if (data == nullptr)
 		return OP_UNKNOW;
-	// 以下为建筑类型
+
 	if (strcmp(data, "移动") == 0)
 		return OP_MOVE;
 	if (strcmp(data, "传送") == 0)
 		return OP_MOVEFAR;
 	if (strcmp(data, "随移") == 0)
 		return OP_MOVERAND;
+	if (strcmp(data, "移至") == 0)
+		return OP_MOVENPC;
 	if (strcmp(data, "NPC") == 0 || strcmp(data, "对话") == 0)
 		return OP_NPC;
 	if (strcmp(data, "选择") == 0 || strcmp(data, "选项") == 0)

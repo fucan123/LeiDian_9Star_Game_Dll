@@ -23,7 +23,7 @@ int Magic::UseMagic(const char* name, int mv_x, int mv_y)
 			LOGVARP2(log, "c6", L"使用技能:%hs(%d,%d)", name, click_x, click_y);
 			m_pGame->m_pGameProc->Click(click_x, click_y);
 
-			int wait_ms = strcmp(name, "最终审判") == 0 ? 3000 : 1000;
+			int wait_ms = strcmp(name, "最终审判") == 0 ? 2500 : 1000;
 			for (int i = 1; i <= 10; i++) {
 				if (i > 2) {
 					if (m_pGame->m_pMove->IsOpenMap()) { // 是否已打开了地图

@@ -14,7 +14,7 @@ public:
 	// NPC
 	DWORD NPC(const char* name=nullptr);
 	// NPC对话选择项
-	void Select(DWORD no);
+	void Select(DWORD no, bool show_log=true);
 	// NPC对话状态[对话框是否打开]
 	bool NPCTalkStatus(int index);
 	// 等待对话框打开
@@ -64,7 +64,7 @@ public:
 	void CloseCommonBox();
 
 	// 关闭所有遮挡层
-	void CloseAllBox();
+	bool CloseAllBox();
 public:
 	// Game类
 	Game* m_pGame;

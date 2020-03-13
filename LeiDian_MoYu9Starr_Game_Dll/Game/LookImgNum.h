@@ -193,10 +193,10 @@ public:
 	~LookImgNum();
 
 	// pixels=像数指针 width=宽度 height=高度
-	LookImgNum(int* pixels, int width, int height, int byte = 4);
+	LookImgNum(int* pixels, int width, int height, bool opengl, int byte = 4);
 
 	// 设置像数信息 pixels=像数指针 width=宽度 height=高度
-	void SetPixels(int* pixels, int width, int height, int byte=4);
+	void SetPixels(int* pixels, int width, int height, bool opengl, int byte=4);
 
 	// 获取像数信息
 	int  GetPixel(int x, int y);
@@ -221,6 +221,8 @@ private:
 	// 获取字模数组
 	int* GetModels(int index);
 private:
+	// 是否opengl 此为倒置像数
+	bool m_bOpengl = false;
 	// 保存像数信息数组
 	int* m_pPixels = nullptr;
 	// 宽度

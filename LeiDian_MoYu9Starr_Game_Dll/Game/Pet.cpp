@@ -45,7 +45,7 @@ bool Pet::PetFuck(DWORD* nums, DWORD length)
 }
 
 // 复活所有没有血量宠物
-DWORD Pet::Revive()
+bool Pet::Revive()
 {
 	bool result = false;
 	m_pGame->m_pPrintScreen->CopyScreenToBitmap(m_pGame->m_hWndBig, 62, 162, 305, 168, 0, true);
@@ -59,8 +59,11 @@ DWORD Pet::Revive()
 		result = m_pGame->m_pPrintScreen->GetGrayPiexlCount(190, 225, false) > 100;
 	}
 
-	if (result && m_pGame->m_pGameProc->IsForegroundWindow()) {
-		m_pGame->m_pItem->UseLingYao();
+	if (result) {
+		result = m_pGame->m_pPrintScreen->IsOpenglPs() ? true : m_pGame->m_pGameProc->IsForegroundWindow();
+		if (result) {
+			m_pGame->m_pItem->UseLingYao();
+		}
 	}
-	return 0;
+	return result;
 }

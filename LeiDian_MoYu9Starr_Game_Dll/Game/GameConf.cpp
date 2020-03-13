@@ -25,7 +25,7 @@ bool GameConf::ReadConf(const char* path)
 {
 	char conf_file[255];
 	strcpy(conf_file, path);
-	strcat(conf_file, "\\配置.txt");
+	strcat(conf_file, "\\设置.txt");
 	printf("游戏配置文件:%s\n", conf_file);
 	OpenTextFile file;
 	if (!file.Open(conf_file)) {

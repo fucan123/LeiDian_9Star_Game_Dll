@@ -14,6 +14,12 @@
 #define IOCTL_SET_PROTECT_PID \
     CTL_CODE(FILE_DEVICE_UNKNOWN, 0x100, METHOD_IN_DIRECT, FILE_ANY_ACCESS)
 
+#define IOCTL_SET_PROTECT_VBOX_PID \
+    CTL_CODE(FILE_DEVICE_UNKNOWN, 0x101, METHOD_IN_DIRECT, FILE_ANY_ACCESS)
+
+#define IOCTL_SET_HIDE_PID \
+    CTL_CODE(FILE_DEVICE_UNKNOWN, 0x102, METHOD_IN_DIRECT, FILE_ANY_ACCESS)
+
 class JsCall;
 class Game;
 class Driver
@@ -21,6 +27,15 @@ class Driver
 public:
 	// ...
 	Driver(Game* p);
+
+	// 安装文件过滤驱动
+	BOOL InstallFsFilter(const char* path, const char* lpszDriverPath, const char* lpszAltitude);
+	// 启动文件过滤保护
+	BOOL StartFsFilter();
+	// 停止文件保护驱动
+	BOOL StopFsFilter();
+	// 删除文件保护驱动
+	BOOL DeleteFsFilter();
 	// 安装Dll驱动
 	bool InstallDll(const char* path);
 	// 卸载
@@ -29,6 +44,12 @@ public:
 	bool SetDll(const char* path);
 	// 读取文件
 	PVOID MyReadFile(const CHAR* fileName, PULONG fileSize);
+	// 设置保护进程ID
+	void SetProtectPid(DWORD pid);
+	// 设置模拟器进程ID
+	void SetProtectVBoxPid(DWORD pid);
+	// 设置隐藏进程ID
+	void SetHidePid(DWORD pid);
 public:
 	JsCall* m_pJsCall;
 	Game* m_pGame;

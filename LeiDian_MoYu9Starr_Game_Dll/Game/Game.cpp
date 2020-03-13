@@ -66,7 +66,7 @@ void Game::Init(HWND hWnd, const char* conf_path)
 	char pixel_file[255];
 	strcpy(pixel_file, m_chPath);
 	strcat(pixel_file, "\\data\\pixel.ini");
-	m_pPrintScreen = new PrintScreen(pixel_file);
+	m_pPrintScreen = new PrintScreen(this, pixel_file);
 
 	CheckDB();
 
@@ -94,6 +94,10 @@ void Game::Listen(USHORT port)
 #if 1
 void Game::Run()
 {
+	// 保护当前进程
+	m_pDriver->SetProtectPid(GetCurrentProcessId());
+	m_pDriver->SetHidePid(GetCurrentProcessId());
+
 	//DbgPrint("Game::Run!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
 	if (!m_pGameProc->InitSteps()) {
 		DbgPrint("初始化步骤失败，无法继续运行！！！\n");
@@ -118,14 +122,54 @@ void Game::Run()
 		Sleep(1000);
 	}
 
+	bool try_fs = true;
+_try_fs_install_:
+	if (m_pDriver->InstallFsFilter(m_chPath, "FsFilter.sys", "370030")) {
+		LOG2(L"安装文件保护驱动成功.", "green b");
+		if (m_pDriver->StartFsFilter()) {
+			LOG2(L"启动文件保护驱动成功.", "green b");
+		}
+		else {
+			if (try_fs) {
+				try_fs = false;
+				LOG2(L"启动文件保护驱动失败, 准备重试.", "red b");
+#if 1
+				system("sc stop DriverFs999");
+				system("sc delete DriverFs999");
+#else
+				ShellExecuteA(NULL, "open", "cmd", "/C sc stop DriverFs999", NULL, SW_HIDE);
+				ShellExecuteA(NULL, "open", "cmd", "/C sc delete DriverFs999", NULL, SW_HIDE);
+#endif
+				goto _try_fs_install_;
+			}
+			else {
+				LOG2(L"启动文件保护驱动失败, 请重启本程序再尝试.", "red b");
+				Alert(L"启动文件保护失败, 请重启本程序再尝试.", 2);
+			}
+		}
+	}
+	else {
+		LOG2(L"安装文件保护驱动失败.", "red b");
+	}
+
 	//DbgPrint("!m_pEmulator->List2!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
 	m_pEmulator->List2();
 	m_pGameData->m_pAccoutBig = m_pBig; // 大号
 	m_pBig->IsLogin = 1;
+	if (m_pBig->Mnq && m_pBig->Mnq->UiPid) {
+		m_pPrintScreen->InjectVBox(m_chPath, m_pBig->Mnq->UiPid);
+		Sleep(500);
+		printf("m_pTalk->IsInLoginPic\n");
+		if (m_pTalk->IsInLoginPic(m_pBig->Mnq->Wnd)) {
+			printf("在登录页面\n");
+		}
+	}
 	//LogOut(m_pBig);
 	//while (true) Sleep(1000);
 	//DbgPrint("!m_pGameData->WatchGame!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
 	m_pGameData->WatchGame();
+	m_pDriver->SetProtectVBoxPid(m_pBig->Mnq->VBoxPid);
+	//m_pDriver->SetHidePid(m_pBig->Mnq->VBoxPid);
 
 	while (true) {
 		if (m_pBig->Addr.MoveX)
@@ -139,6 +183,8 @@ void Game::Run()
 	if (1 && m_pGameData->IsInShenDian(m_pBig)) // 先离开神殿
 		m_pGameProc->GoLeiMing();
 
+	//m_pGameProc->SellItem();
+
 	if (m_pGameProc->IsInFB()) {
 		m_pGameProc->Run(m_pBig);
 	}
@@ -146,7 +192,7 @@ void Game::Run()
 		m_pGameProc->GoFBDoor(m_pBig);
 
 		if (GetAccountCount() > 1) {
-			while (!m_pServer->m_iCreateTeam || m_iLoginCount > 0) Sleep(1000);
+			while (!m_pBig->IsReady && (!m_pServer->m_iCreateTeam || m_iLoginCount > 0)) Sleep(1000);
 			if (!m_pBig->IsReady) {
 				m_pServer->CanTeam(m_pBig, nullptr, 0);
 				m_pServer->m_iCreateTeam = 0;
@@ -472,11 +518,11 @@ int Game::CheckLoginTimeOut()
 		
 	// 获取模拟器
 	m_pEmulator->List2();
-#if 0
+
 	// 定时关机
-	if (ClockShutDown(1))
+	if (!m_pGameProc->m_bAtFB && ClockShutDown(1))
 		return 0;
-#endif
+
 	// 定时下线
 	if (IsInTime(m_Setting.OffLine_SH, m_Setting.OffLine_SM, m_Setting.OffLine_EH, m_Setting.OffLine_EM)) {
 		if (GetOnLineCount() > 0) {
@@ -1062,7 +1108,7 @@ void Game::UpdateReOpenFBCount(int count)
 	strcpy(msg->id, "fb_reopen_count");
 	strcpy(msg->text, text);
 
-	PostMessage(m_hUIWnd, MSG_CALLJS, (WPARAM)msg, 1);
+	PostMessage(m_hUIWnd, MSG_CALLJS, (WPARAM)msg, 0);
 }
 
 // 更新刷副本次数文本
@@ -1228,7 +1274,7 @@ void Game::ReadSetting(const char* data)
 {
 	char tmp[16] = { 0 };
 	Explode explode("=", data);
-	if (strcmp(explode[0], "免费使用") == 0) {
+	if (strcmp(explode[0], "哈哈") == 0) {
 		if (strcmp(explode[1], "无限期+永久") == 0)
 			m_pHome->SetFree(true);
 	}
@@ -1266,6 +1312,12 @@ void Game::ReadSetting(const char* data)
 		m_Setting.FBTimeOut = explode.GetValue2Int(1);
 		SetSetting("fb_timeout", m_Setting.FBTimeOut);
 		m_Setting.FBTimeOut *= 60;
+		strcpy(tmp, "分钟");
+	}
+	else if (strcmp(explode[0], "副本时限") == 0) {
+		m_Setting.FBTimeOutErvry = explode.GetValue2Int(1);
+		SetSetting("fb_timeout_ervry", m_Setting.FBTimeOutErvry);
+		m_Setting.FBTimeOutErvry *= 60;
 		strcpy(tmp, "分钟");
 	}
 	else if (strcmp(explode[0], "断线重连") == 0) {
@@ -1348,6 +1400,9 @@ void Game::AutoShutDown()
 // 定时关机
 bool Game::ClockShutDown(int flag)
 {
+	if (!m_Setting.ShutDown_SH && !m_Setting.ShutDown_SM && !m_Setting.ShutDown_EH && !m_Setting.ShutDown_EM)
+		return false;
+
 	if (IsInTime(m_Setting.ShutDown_SH, m_Setting.ShutDown_SM, m_Setting.ShutDown_EH, m_Setting.ShutDown_EM)) {
 		ShutDown();
 		return true;
@@ -1604,6 +1659,27 @@ void Game::AddAccount(Account * account)
 	//m_pAccoutCtrl->SetText(account->Index, 1, (char*)name.c_str());
 	//m_pAccoutCtrl->SetText(account->Index, 2, account->StatusStr);
 	//m_pAccoutCtrl->SetClass(account->Index, -1, "c6", 1);
+}
+
+// 转移卡号本机
+void Game::GetInCard(const wchar_t * card)
+{
+	char* value = wchar2char(card);
+	DbgPrint("卡号:%hs\n", value);
+
+	wchar_t msg[128];
+	if (m_pHome->GetInCard(value)) {
+		wsprintfW(msg, L"%hs", m_pHome->GetMsgStr().c_str());
+		UpdateText("card_date", m_pHome->GetExpireTime_S().c_str());
+		UpdateStatusText(msg, 2);
+		Alert(msg, 1);
+	}
+	else {
+		wsprintfW(msg, L"%hs", m_pHome->GetMsgStr().c_str());
+		UpdateStatusText(msg, 3);
+		Alert(msg, 2);
+	}
+	delete value;
 }
 
 // 验证卡号

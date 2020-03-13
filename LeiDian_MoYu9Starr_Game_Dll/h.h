@@ -25,6 +25,8 @@ extern "C" {
 	DLLEXPORT int WINAPI Game_InTeam(int index);
 	// 修改一些设置
 	DLLEXPORT int WINAPI Game_PutSetting(const wchar_t* name, int v);
+	// 转移卡号本机
+	DLLEXPORT int WINAPI Game_GetInCard(const wchar_t* card);
 	// 验证卡号
 	DLLEXPORT int WINAPI Game_VerifyCard(const wchar_t* card);
 	// 查询副本记录

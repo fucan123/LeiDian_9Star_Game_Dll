@@ -34,31 +34,49 @@ enum ComImgIndex
 	CIN_MAX,
 };
 
-typedef struct com_pixel {
+typedef struct com_pixel 
+{
 	char Key[32];      // 名称
 	int  Width;        // 宽度
 	int  Height;       // 高度
 	COLORREF* Pixels;  // 像数数组
 } ComPixel;
 
-typedef struct compare_point {
+typedef struct compare_point 
+{
 	int x;
 	int y;
 } ComPoint;
 
 // 对比图片信息
-typedef struct compare_image{
+typedef struct compare_image
+{
 	INT       Width;  // 宽度
 	INT       Height; // 高度
 	COLORREF* Buffer; // 颜色
 } CompareImageInfo;
 
+// 共享读取像数信息
+typedef struct share_read_pixel_data
+{
+	DWORD x;                  // 要读取的x开始位置
+	DWORD x2;                 // 要读取的x结束位置
+	DWORD y;                  // 要读取的y开始位置
+	DWORD y2;                 // 要读取的y结束位置
+	DWORD width;              // 宽
+	DWORD height;             // 高
+	DWORD Pixels[1920 * 1080];// 像数信息
+	DWORD Flag;               // 0-不做任何操作 1-程序需要读取像数信息
+	DWORD OK;                 // 是否可以使用此dll读取像数
+} ShareReadPixelData;
+
+class Game;
 class LookImgNum;
 class PrintScreen
 {
 public:
 	// ...
-	PrintScreen(const char* pixel_file=nullptr);
+	PrintScreen(Game* p, const char* pixel_file);
 public:
 	// 读取像数配置
 	void ReadPixelConf(const char* pixel_file);
@@ -67,6 +85,10 @@ public:
 	// 加载对比图片
 	void LoadCompareImage(ComImgIndex index, wchar_t* path);
 
+	// 是否是注入opengl截图
+	bool IsOpenglPs();
+	// 注入PID
+	void InjectVBox(const char* path, DWORD pid);
 	// 初始化
 	void InitDC();
 	// 截图
@@ -160,6 +182,8 @@ private:
 	// 比较像数
 	bool  ComparePixel(int screen_x, int screen_y, ComPixel* p);
 public:
+	// ...
+	Game* m_pGame;
 	// 识别图中数字
 	LookImgNum* m_pLookImgNum;
 	// 相对于游戏的截图位置
@@ -170,6 +194,8 @@ public:
 	HDC m_hMemDC;
 	HBITMAP m_hBitmap;
 	HBITMAP m_hScreen = NULL;
+	HANDLE  m_hShareMap;               // 共享内存
+	ShareReadPixelData* m_pShareBuffer;// 共享内存
 
 	int m_xScrn = 0;
 	int m_yScrn = 0;

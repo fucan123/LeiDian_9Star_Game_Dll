@@ -12,7 +12,7 @@ public:
 	// 初始化数据
 	void InitData();
 	// 移动到终点[达到终点返回]
-	void RunEnd(DWORD x, DWORD y, _account_* account);
+	bool RunEnd(DWORD x, DWORD y, _account_* account, bool click=true, DWORD ms=0);
 	// 移动
 	int  Run(DWORD x, DWORD y, _account_* account, DWORD click_x, DWORD click_y, bool is_click=false, bool rand_click=false);
 	// 打开游戏地图

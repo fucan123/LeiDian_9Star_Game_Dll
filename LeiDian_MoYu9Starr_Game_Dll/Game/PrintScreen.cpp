@@ -1,14 +1,20 @@
+#include "Game.h"
 #include "PrintScreen.h"
 #include "LookImgNum.h"
+#include <shellapi.h>
 #include <My/Common/C.h>
+#include <My/Common/func.h>
 #include <My/Common/OpenTextFile.h>
 #include <My/Common/Explode.h>
 #include <atlimage.h>
 #include <stdio.h>
 
 // ...
-PrintScreen::PrintScreen(const char* pixel_file)
+PrintScreen::PrintScreen(Game* p, const char* pixel_file)
 {
+	m_pGame = p;
+	m_hShareMap = NULL;
+	m_pShareBuffer = NULL;
 	m_xScrn = GetSystemMetrics(SM_CXSCREEN);
 	m_yScrn = GetSystemMetrics(SM_CYSCREEN);
 	printf("屏幕分辨率:%d*%d\n", m_xScrn, m_yScrn);
@@ -148,6 +154,51 @@ void PrintScreen::LoadCompareImage(ComImgIndex index, wchar_t* path)
 	}
 }
 
+// 是否是注入opengl截图
+bool PrintScreen::IsOpenglPs()
+{
+	return m_pShareBuffer && m_pShareBuffer->OK;
+}
+
+// 注入模拟器
+void PrintScreen::InjectVBox(const char* path, DWORD pid)
+{
+	wchar_t log[256];
+	wchar_t dll[256];
+	wsprintfW(dll, L"%hs\\files\\opengl_ps.dll", path);
+	if (!IsFileExist(dll)) {
+		LOGVARN2(64, "red", L"files目录下不存在opengl_ps.dll文件");
+		return;
+	}
+
+	m_hShareMap = ::CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, 
+		sizeof(ShareReadPixelData), L"Share_Read_Pixel");
+	if (!m_hShareMap) {
+		m_pShareBuffer = nullptr;
+		DbgPrint("CreateFileMapping失败(像数信息内存)\n");
+		LOGVARP2(log, "red", L"CreateFileMapping失败(像数信息内存%d)", GetLastError());
+		return;
+	}
+	// 映射对象的一个视图，得到指向共享内存的指针，设置里面的数据
+	m_pShareBuffer = (ShareReadPixelData*)::MapViewOfFile(m_hShareMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+	// 初始化
+	ZeroMemory(m_pShareBuffer, sizeof(ShareReadPixelData));
+	BOOL result = InjectDll(pid, dll, L"opengl_ps.dll", TRUE);
+	if (result) {
+		LOGVARP2(log, "green b", L"注入模拟器渲染窗口成功");
+	}
+	else {
+		LOGVARP2(log, "red b", L"注入模拟器渲染窗口失败");
+		char cmd[256];
+		sprintf_s(cmd, "/C %s\\files\\inui32.exe %d", path, pid);
+		printf("调用inui32程序注入opengl_ps:%hs\n", cmd);
+		LOGVARP2(log, "c0 b", L"调用inui32程序注入ui:%d\n", pid);
+		//system(cmd);
+
+		ShellExecuteA(NULL, "open", "cmd", cmd, NULL, SW_HIDE);
+	}
+}
+
 // 初始化
 void PrintScreen::InitDC()
 {
@@ -163,17 +214,67 @@ void PrintScreen::InitDC()
 // 截图
 HBITMAP PrintScreen::CopyScreenToBitmap(HWND hWnd, int start_x, int start_y, int end_x, int end_y, DWORD sleep_ms, bool del)
 {
+	RECT rect;
+	::GetWindowRect(hWnd, &rect);
+	int w = rect.right - rect.left, h = rect.bottom - rect.top;
+	if (w <= 0 || h <= 0)
+		return NULL;
+	if (((end_x - start_x) <= 0) || ((end_y - start_y) <= 0))
+		return NULL;
+
 	m_GamePrintRect.left = start_x;
 	m_GamePrintRect.right = end_x;
 	m_GamePrintRect.top = start_y;
 	m_GamePrintRect.bottom = end_y;
 
+	//printf("m_pShareBuffer:%08X Ok:%d\n", m_pShareBuffer, m_pShareBuffer->OK);
+	if (m_pShareBuffer && m_pShareBuffer->OK) {
+		DWORD stm = GetTickCount();
+
+		m_pShareBuffer->x = start_x;
+		m_pShareBuffer->y = h - end_y;     // opengl从左下角开始算
+		m_pShareBuffer->x2 = end_x;
+		m_pShareBuffer->y2 = h - start_y;  // opengl从左下角开始算
+		m_pShareBuffer->width = end_x - start_x;;
+		m_pShareBuffer->height = end_y - start_y;
+		m_pShareBuffer->Flag = 1;
+
+		//printf("准备读取像数 %d %d\n", m_pShareBuffer->width, m_pShareBuffer->height);
+		while (m_pShareBuffer->Flag == 1) Sleep(1);
+		int h2 = m_pShareBuffer->height / 2;
+		for (int y = 0; y < h2; y++) {
+			for (int x = 0; x < m_pShareBuffer->width; x++) {
+				int swp_index = (m_pShareBuffer->height - y - 1);
+				DWORD tmp = m_pShareBuffer->Pixels[(y * m_pShareBuffer->width) + x];
+				m_pShareBuffer->Pixels[(y * m_pShareBuffer->width) + x] 
+					= m_pShareBuffer->Pixels[(swp_index * m_pShareBuffer->width) + x];
+				m_pShareBuffer->Pixels[(swp_index * m_pShareBuffer->width) + x] = tmp;
+			}
+		}
+
+		//printf("读取用时:%d毫秒\n", GetTickCount() - stm);
+
+		m_bmWidth = m_pShareBuffer->width;
+		m_bmHeight = m_pShareBuffer->height;
+#if 0
+		for (int y = 0; y < m_pShareBuffer->height; y++) {
+			for (int x = 0; x < m_pShareBuffer->width; x++) {
+				printf("%08X ", GetPixel(x, y));
+			}
+			printf("\n");
+		}
+#endif
+		
+		return NULL;
+	}
+
 	SetForegroundWindow(hWnd);
+
+	
 	if (sleep_ms)
 		Sleep(sleep_ms);
 
-	RECT rect, data;
-	::GetWindowRect(hWnd, &rect);
+	RECT data;
 	memcpy(&data, &rect, sizeof(RECT));
 
 	if (start_x)
@@ -351,6 +452,14 @@ int PrintScreen::SaveBitmapToFile(HBITMAP hBitmap, LPCWSTR lpFileName)
 // 获取位图像数
 COLORREF PrintScreen::GetPixel(int x, int y)
 {
+	if (m_pShareBuffer->OK) {
+		m_bmWidth = m_pShareBuffer->width;
+		m_bmHeight = m_pShareBuffer->height;
+		// 图像是倒置的
+		//return m_pShareBuffer->Pixels[x + ((m_bmHeight-y-1) * m_bmWidth)];
+		return m_pShareBuffer->Pixels[x + (y * m_bmWidth)];
+	}
+
 	if (!m_hScreen && !m_bIsGetBuffer)
 		return 0;
 
@@ -568,8 +677,18 @@ int PrintScreen::LookNum(int start_x, int end_x, int start_y, int end_y, DWORD c
 	if (end_y <= 0 || end_y > m_bmHeight)
 		end_y = m_bmHeight;
 
-	int* pixels = ((int*)&m_pBuffer[(start_x * 4) + (start_y * m_bmWidthBytes)]);
-	m_pLookImgNum->SetPixels(pixels, m_bmWidthBytes / 4, end_y - start_y);
+	//printf("w:%d h:%d ok:%d\n", m_pShareBuffer->width, end_y - start_y, m_pShareBuffer->OK);
+
+	if (m_pShareBuffer && m_pShareBuffer->OK) {
+		//int* pixels = (int*)&m_pShareBuffer->Pixels[start_x + ((m_pShareBuffer->height-end_y) * m_pShareBuffer->width)];
+		int* pixels = (int*)&m_pShareBuffer->Pixels[start_x + (start_y * m_pShareBuffer->width)];
+		m_pLookImgNum->SetPixels(pixels, m_pShareBuffer->width, end_y - start_y, true);
+	}
+	else {
+		int* pixels = ((int*)&m_pBuffer[(start_x * 4) + (start_y * m_bmWidthBytes)]);
+		m_pLookImgNum->SetPixels(pixels, m_bmWidthBytes / 4, end_y - start_y, false);
+	}
+	
 	return m_pLookImgNum->GetNum(color, diff, d_v);
 }
 

@@ -43,6 +43,9 @@
 #define MSG_FILLTABLE     4
 #define MSG_SETSETTING    5
 #define MSG_ALERT         6
+#define MSG_UPSTATUSTEXT  100
+#define MSG_UPVER_OK      101
+#define MSG_VERIFY_OK     200
 
 struct my_msg {
 	int  op;
@@ -273,6 +276,8 @@ public:
 	int AutoPlay(int index, bool stop);
 	// 添加帐号
 	void AddAccount(Account* account);
+	// 转移卡号本机
+	void GetInCard(const wchar_t* card);
 	// 验证卡号
 	void VerifyCard(const wchar_t* card);
 	// 更新程序版本
@@ -322,7 +327,8 @@ public:
 		int  InitTimeOut;    // 启动超时时间
 		int  LoginTimeOut;   // 登录超时允许时间
 		int  TimeOut;        // 游戏超时时间
-		int  FBTimeOut;      // 副本超时时间
+		int  FBTimeOut;      // 副本超时时间[卡住检测]
+		int  FBTimeOutErvry; // 副本超时时间[随时检测]
 
 		int  ReConnect;      // 是否断线重连
 		int  AutoLoginNext;  // 是否自动登录帐号
@@ -350,6 +356,8 @@ public:
 		int  NoAutoSelect;   // 不自动选择游戏区
 		int  TalkOpen;       // 是否自动喊话    
 		int  IsDebug;        // 是否显示调试信息
+
+		int  NoHideProc;     // 是否不隐藏进程
 		
 	} m_Setting;
 

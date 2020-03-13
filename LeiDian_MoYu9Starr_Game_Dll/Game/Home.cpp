@@ -46,6 +46,31 @@ bool Home::IsValid()
 	return now_time <= m_iEndTime;
 }
 
+// 转移
+bool Home::GetInCard(const char* card)
+{
+	HttpClient http;
+	http.m_GB2312 = false;
+	http.AddParam("card", card);
+	http.AddParam("game", HOME_GAME_FLAG);
+	http.AddParam("machine_id", m_MachineId);
+	HTTP_STATUS status = http.Request(HOME_HOST, L"/getincard", m_sResult, HTTP_POST);
+	if (status != HTTP_STATUS_OK) {
+		SetError(status, "移至本机失败", status);
+		return false;
+	}
+
+	m_pRepsone = (char*)m_sResult.c_str();
+	Parse();
+
+	printf("GetInCard\n");
+	//MessageBox(NULL, m_MsgStr, L"XXX", MB_OK);
+	//printf("%d, %s 内容->%s\n", m_Error, m_MsgStr.c_str(), m_pRepsone);
+
+	return m_Error == 0;
+}
+
+// 充值
 bool Home::Recharge(const char* card)
 {
 	HttpClient http;
@@ -194,7 +219,7 @@ void Home::SetExpireTime_S()
 	struct tm t;
 	localtime_s(&t, &expire_time);
 	char str[128];
-	sprintf_s(str, "%d-%d-%d %d:%d", t.tm_year+1900, t.tm_mon+1, t.tm_mday, t.tm_hour, t.tm_min);
+	sprintf_s(str, "%d-%02d-%02d %02d:%02d", t.tm_year+1900, t.tm_mon+1, t.tm_mday, t.tm_hour, t.tm_min);
 	m_sExpireTime = str;
 	//printf("expire_time:%d %s\n", expire_time, str);
 }

@@ -4,6 +4,7 @@
 #include "Move.h"
 #include "Talk.h"
 #include "GameProc.h"
+#include "PrintScreen.h"
 #include <My/Common/func.h>
 #include <My/Win32/Peb.h>
 #include <time.h>
@@ -87,6 +88,7 @@ void GameData::WatchGame()
 						m_pGame->m_hProcessBig = m_hGameProcess;
 
 						m_pAccoutBig = m->Account;
+						m_pGame->m_pPrintScreen->InjectVBox(m_pGame->m_chPath, m->UiPid);
 					}
 
 					m_pGame->SetGameAddr(m->Account, &m_DataAddr);
@@ -185,14 +187,15 @@ bool GameData::FindPlayerAddr()
 
 	// 4:0x00000000 4:0x0000DECE 4:0x00000000 4:0x00000001 4:0x00000000 4:0x00000030 4:0x00000000 4:0x0000DECE 4:0x00000000 4:0x00000001 4:0x00000000 4:0x00000030
 	DWORD codes[] = {
-		0x07301234, 0x00000000, 0xFFFFFFFF, 0x3F800000,
+		0x073477B8, 0x00000000, 0xFFFFFFFF, 0x3F800000,
 		0x00010001, 0x00000011, 0x00000011, 0x00000011,
 	};
 	DWORD address = 0;
 	if (SearchCode(codes, sizeof(codes) / sizeof(DWORD), &address)) {
 		DWORD data = 0;
 		bool result = ReadProcessMemory(m_hGameProcess, (LPVOID)address, &data, sizeof(data), NULL);
-		if ((data & 0x0fff) == 0x08A8) {
+		//LOGVARN2(32, "blue", L"人物首地址:%08X Data:%08X", m_DataAddr.Player, data);
+		if ((data & 0x0fff) == 0x07B8) {
 			//LOGVARN2(32, "blue", L"人物首地址:%08X %08X", address, address & 0x0fff);
 			if ((address & 0x0fff) == 0x0000) {
 				m_DataAddr.Player = address;
@@ -216,15 +219,14 @@ bool GameData::FindMoveCoorAddr()
 {
 	// 4:0x00000000 4:0x00000000 4:0x00000000 4:0x07328EF4 4:0x07328EF4
 	DWORD codes[] = {
-		0x00000000, 0x00000000, 0x00000000, 0x00000011,
-		0x07361234, 0x07361234, 0x00000000, 0x00000011,
-		0x00000022, 0x00000022, 0x00000022, 0x00000011,
+		0x07350938, 0x00000000, 0x00000000, 0x00000000,
+		0x00000000, 0x073A3194, 0x073A3194, 0x07350938,
 	};
 	DWORD address = 0;
 	if (SearchCode(codes, sizeof(codes) / sizeof(DWORD), &address)) {
 		//LOGVARN2(32, "blue", L"目的地坐标地址:%08X %08X", address, address&0x0f);
-		if ((address & 0x0f) == 0x08) {
-			m_DataAddr.MoveX = address + 0x30;
+		if ((address & 0x0f) == 0x00) {
+			m_DataAddr.MoveX = address - 0x14;
 			m_DataAddr.MoveY = m_DataAddr.MoveX + 4;
 
 			LOGVARN2(32, "blue", L"目的地坐标地址:%08X", m_DataAddr.MoveX);
@@ -348,7 +350,7 @@ void GameData::WriteMoveCoor(DWORD x, DWORD y, _account_* account)
 #else
 			wchar_t dll[256];
 			wsprintfW(dll, L"%hs\\win7\\wxy.dll", m_pGame->m_chPath);
-			InjectDll(account->Mnq->VBoxPid, dll);
+			InjectDll(account->Mnq->VBoxPid, dll, NULL, FALSE);
 #endif
 			m_bInDll = true;
 			Sleep(100);

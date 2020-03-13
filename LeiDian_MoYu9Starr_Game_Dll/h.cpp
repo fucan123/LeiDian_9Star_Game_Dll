@@ -34,7 +34,7 @@ void WINAPI Game_Init(HWND hWnd, const char* conf_path)
 // 游戏释放
 DLLEXPORT void WINAPI Game_Relase()
 {
-	game.m_pDriver->UnStall();
+	//game.m_pDriver->UnStall();
 }
 
 // 游戏暂停
@@ -96,6 +96,13 @@ DLLEXPORT int WINAPI Game_PutSetting(const wchar_t* name, int v)
 	return 0;
 }
 
+// 转移卡号本机
+DLLEXPORT int WINAPI Game_GetInCard(const wchar_t* card)
+{
+	game.GetInCard(card);
+	return 0;
+}
+
 // 验证卡号
 DLLEXPORT int WINAPI Game_VerifyCard(const wchar_t* card)
 {
@@ -150,6 +157,9 @@ DWORD WINAPI Verify(LPVOID param)
 		game.UpdateStatusText(L"激活成功.", 2);
 		game.UpdateText("card_date", game.m_pHome->GetExpireTime_S().c_str());
 		game.AddUILog(L"验证成功.", "green b");
+
+		my_msg* msg = game.GetMyMsg(MSG_VERIFY_OK);
+		PostMessage(game.m_hUIWnd, MSG_CALLJS, (WPARAM)msg, 0);
 	}
 	else {
 		game.UpdateStatusText(L"未激活.", 3);

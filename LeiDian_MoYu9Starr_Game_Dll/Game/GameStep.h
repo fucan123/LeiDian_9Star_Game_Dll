@@ -26,6 +26,7 @@ enum STEP_CODE
 	OP_MOVE,            // 移动
 	OP_MOVEFAR,         // 传送
 	OP_MOVERAND,        // 随移
+	OP_MOVENPC,          // 移至哪一个NPC
 	OP_NPC,             // NPC对话
 	OP_SELECT,          // 选择对话选项
 	OP_MAGIC,           // 技能
@@ -56,6 +57,26 @@ struct Point
 	int y;
 	int flag; // 0-屏幕坐标不需要转换 1-基于游戏坐标需要转换
 };
+
+// NPC点击相关信息
+struct _npc_coor_
+{
+	CHAR  Name[64];     // NPC名字
+	struct {
+		DWORD MvX;      // 需要移动位置X
+		DWORD MvY;      // 需要移动位置Y
+		DWORD MvX2;     // 需要移动位置X2, 有则在X-X2间随机
+		DWORD MvY2;     // 需要移动位置Y2, 有则在Y-Y2间随机
+		DWORD ClkX;     // 点击X
+		DWORD ClkY;     // 点击Y
+		DWORD ClkX2;    // 点击X, 有则在X-X2间随机
+		DWORD ClkY2;    // 点击Y, 有则在Y-Y2间随机
+		DWORD Flag;     // 0-不参与移动随机, 1-参与移动位置随机
+	} Point[32];        // 最多支持32个位置
+	DWORD MvLength;     // 参与移动位置随机数量
+	DWORD Length;       // 所有位置数量
+};
+
 // 游戏执行步骤
 struct _step_
 {
@@ -66,19 +87,21 @@ struct _step_
 	DWORD     Y;           // 要操作的位置Y
 	DWORD     X2;
 	DWORD     Y2;
-	DWORD     NPCId;       // 要对话的NPCID 
-	CHAR      NPCName[32]; // 要对话的NPC名称
-	DWORD     SelectNo;    // 对话选择索引 0开始
-	CHAR      Name[128];   // 名称 根据操作码来区别
-	CHAR      Magic[128];  // 技能
-	DWORD     WaitMs;      // 等待多少毫秒或是否等待技能冷却或技能可以有多少秒冷却
-	DWORD     OpCount;     // 操作次数
-	DWORD     ButtonId;    // 按钮ID
-	int       SmallV;      // 小号操作值
-	DWORD     Extra[8];    // 扩展
-	__int64   ExecTime;    // 执行时间
-	bool      Exec;        // 已在执行
-	int       Index;       // 索引
+	DWORD     NPCId;        // 要对话的NPCID 
+	CHAR      NPCName[32];  // 要对话的NPC名称
+	DWORD     SelectNo;     // 对话选择索引 0开始
+	CHAR      Name[128];    // 名称 根据操作码来区别
+	CHAR      Magic[128];   // 技能
+	DWORD     WaitMs;       // 等待多少毫秒或是否等待技能冷却或技能可以有多少秒冷却
+	DWORD     OpCount;      // 操作次数
+	DWORD     ButtonId;     // 按钮ID
+	int       SmallV;       // 小号操作值
+	DWORD     Extra[8];     // 扩展
+	__int64   ExecTime;     // 执行时间
+	bool      Exec;         // 已在执行
+	int       Index;        // 索引
+
+	_npc_coor_* p_npc;      // 对应哪一个NPC信息
 };
 
 class Explode;
@@ -101,6 +124,10 @@ public:
 	// 获得下一步骤操作码
 	STEP_CODE NextCode(Link<_step_*>& link);
 
+	// 读取NPC坐标文件信息
+	bool ReadNPCCoor(const char* path);
+	// 获取NPC坐标信息
+	_npc_coor_* GetNpcCoor(const char* name);
 	// 获取正在执行的流程文件名称
 	char* GetStepFileName();
 	// 设置
@@ -131,6 +158,10 @@ private:
 	// 添加步骤
 	void AddStep(_step_& step);
 public:
+	// NPC信息个数
+	int m_nNpcCoorCount = 0;
+	// NPC信息列表
+	_npc_coor_ m_NpcCoor[50];
 	// 所有执行步骤文件数量
 	int m_nStepCount = 0;
 	// 流程文件列表

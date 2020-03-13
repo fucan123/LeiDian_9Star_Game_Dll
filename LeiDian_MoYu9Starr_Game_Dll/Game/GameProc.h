@@ -92,12 +92,20 @@ public:
 	bool StepIsComplete();
 	// 移动
 	void Move(bool rand_click=false);
+	// 移至NPC
+	bool MoveNPC();
+	// 获取要移至位置
+	int  GetMoveNPCPos(_npc_coor_* p_npc, DWORD& x, DWORD& y);
 	// NCP
 	void NPC();
 	// NPC
 	void NPC(const char* name, int x, int y, int x2 = 0, int y2 = 0);
 	// 最后一个对话的NPC
 	bool NPCLast(bool check_pos=true, DWORD mov_sleep_ms=0);
+	// 检查是否在可点击NPC范围内 is_move=是否移动到范围
+	int  CheckInNPCPos(_npc_coor_* p_npc, DWORD& click_x, DWORD& click_y, bool is_move=true);
+	// 获取点击NPC坐标
+	bool GetNPCClickPos(_npc_coor_* p_npc, DWORD pos_x, DWORD pos_y, DWORD& click_x, DWORD& click_y);
 	// 选择
 	void Select();
 	// 技能
@@ -175,7 +183,7 @@ public:
 	// 读取包包物品
 	bool ReadBag();
 	// 是否需要加血量
-	int  IsNeedAddLife();
+	int  IsNeedAddLife(int low_life);
 	// 是否最前窗口
 	bool IsForegroundWindow();
 	// 加血
@@ -203,6 +211,8 @@ public:
 	_step_* m_pStepCopy;
 	// 上次执行的步骤
 	_step_* m_pStepLast;
+	// 上次移动的步骤
+	_step_* m_pStepLastMove;
 	// 已记录步骤[卡住重回此步骤]
 	_step_* m_pStepRecord;
 	// 是否记录步骤
@@ -230,11 +240,19 @@ public:
 	bool m_bIsFirstMove = true;
 	// 是否玩副本
 	bool m_bPlayFB = true;
+	// 
+	bool m_bToBig = false;
+	//
+	bool m_bNeedCloseBag = false;
 
+	// 打了第几个BOSS
+	int m_nBossNum = 0;
 	// 是否重开副本0-不重开 1-直接出去重开 2-退出登录再重开 
 	int m_nReOpenFB = 0;
 	// 重新移动次数
 	int m_nReMoveCount = 0;
+	// 重新移动次数上次
+	int m_nReMoveCountLast = 0;
 	// 药包数量
 	int m_nYaoBao = 0;
 	// 药数量
@@ -248,11 +266,15 @@ public:
 	// 刷副本次数
 	int m_nPlayFBCount = 0;
 	// 已经计数时间
+	int m_nFBTimeLongOne = 0;
+	// 已经计数时间
 	int m_nFBTimeLong = 0;
 	// 开始副本时间
 	int m_nStartFBTime = 0;
 	// 更新副本时间
 	int m_nUpdateFBTimeLongTime = 0;
+	// 复活宠物时间
+	int m_nRevivePetTime = 0;
 
 	// 上次的数据
 	struct {

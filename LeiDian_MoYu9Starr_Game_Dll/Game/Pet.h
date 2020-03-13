@@ -12,7 +12,7 @@ public:
 	// 宠物合体
 	bool  PetFuck(DWORD* nums, DWORD length);
 	// 复活所有没有血量宠物
-	DWORD Revive();
+	bool Revive();
 public:
 	// Game类
 	Game* m_pGame;

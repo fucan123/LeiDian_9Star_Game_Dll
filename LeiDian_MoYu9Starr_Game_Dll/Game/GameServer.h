@@ -87,7 +87,7 @@ public:
 	void OffLine(_account_* p, const char* data, int len);
 
 	// 询问项链数量
-	void AskXLCount();
+	void AskXLCount(const char* msg);
 	// 发送数据
 	int Send(SOCKET s=0);
 	// 发送数据
@@ -124,4 +124,7 @@ public:
 	int m_iOffLine = 0;
 	// 复活了多少次
 	int m_iReBorn = 0;
+
+	// 开副本时间
+	__int64 m_iOpenFBTime = 0;
 };

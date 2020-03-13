@@ -20,25 +20,30 @@ void Move::InitData()
 }
 
 // 移动到终点[达到终点返回]
-void Move::RunEnd(DWORD x, DWORD y, _account_* account)
+bool Move::RunEnd(DWORD x, DWORD y, _account_* account, bool click, DWORD ms)
 {
-	if (Run(x, y, account, MyRand(300, 500), MyRand(200, 350), true) == -1)
-		return;
+	if (Run(x, y, account, MyRand(300, 500), MyRand(200, 350), click) == -1)
+		return true;
 
-	while (true) {
+	for (DWORD i = 0; true; i += 800) {
 		while (m_pGame->m_pGameProc->m_bPause) Sleep(500);
 
 		if (IsMoveEnd(account))
 			break;
 		if (!IsMove(account)) {
-			if (Run(x, y, account, MyRand(250, 500), MyRand(150, 300), true) == -1)
-				return;
+			if (Run(x, y, account, MyRand(250, 500), MyRand(150, 300), click) == -1)
+				return true;
 		}
+
+		if (ms && i > ms)
+			return false;
 
 		Sleep(800);
 	}
+
 	DbgPrint("已抵达目的地:%d,%d\n", x, y);
 	LOGVARN2(64, "green", L"已抵达目的地:%d,%d", x, y);
+	return true;
 }
 
 // 移动
@@ -63,7 +68,7 @@ int Move::Run(DWORD x, DWORD y, _account_* account, DWORD click_x, DWORD click_y
 		m_pGame->m_pGameProc->Click(click_x, click_y);
 		Sleep(200);
 	}
-	if (1 && rand_click) {
+	if (0 && rand_click) {
 		int count = MyRand(0, 1, x + y);
 		for (int i = 0; i < count; i++) {
 			m_pGame->m_pGameProc->Click(MyRand(162, 900, i), MyRand(162, 500, i));
@@ -88,6 +93,7 @@ void Move::OpenMap(_account_* account)
 	// 1120,66-1220-125
 	DbgPrint("打开地图\n");
 	LOG2(L"打开地图", "c0");
+	//m_pGame->m_pEmulator->Tap(MyRand(1108, 1168), MyRand(55, 135));
 	m_pGame->m_pGameProc->Click(1108, 55, 1168, 135, 0xff, account->Mnq->Wnd);
 	Sleep(100);
 	WaitMapOpen();
@@ -105,8 +111,8 @@ void Move::CloseMap(HWND hwnd)
 // 地图是否打开
 bool Move::IsOpenMap()
 {
-	m_pGame->m_pPrintScreen->CopyScreenToBitmap(m_pGame->m_pGameProc->m_hWndGame, 715, 620, 730, 635, 0, true);
-	return m_pGame->m_pPrintScreen->CompareImage(CIN_MapOpen, nullptr, 1) > 0;
+	m_pGame->m_pPrintScreen->CopyScreenToBitmap(m_pGame->m_pGameProc->m_hWndGame, 715, 620, 725, 630, 0, true);
+	return m_pGame->m_pPrintScreen->ComparePixel("地图已打开", nullptr, 1) > 0;
 }
 
 // 等待地图打开
@@ -129,7 +135,7 @@ void Move::GoWay()
 	// 725,620-790,630
 	DbgPrint("自动寻路\n");
 	LOGVARN2(32, "c0", L"自动寻路(%d)", m_pGame->m_pGameProc->m_nReMoveCount + 1);
-	m_pGame->m_pGameProc->Click(CLICK_X_GOWAY, CLICK_Y_GOWAY, CLICK_X2_GOWAY, CLICK_Y2_GOWAY);
+	m_pGame->m_pGameProc->Click(775, 620, 825, 635);
 }
 
 // 设置移动位置

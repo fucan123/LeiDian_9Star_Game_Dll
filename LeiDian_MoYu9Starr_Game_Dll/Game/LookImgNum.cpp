@@ -17,13 +17,13 @@ LookImgNum::~LookImgNum()
 }
 
 // pixels=像数指针 width=宽度 height=高度
-LookImgNum::LookImgNum(int * pixels, int width, int height, int byte)
+LookImgNum::LookImgNum(int * pixels, int width, int height, bool opengl, int byte)
 {
-	SetPixels(pixels, width, height, byte);
+	SetPixels(pixels, width, height, opengl, byte);
 }
 
 // 设置像数信息 pixels=像数指针 width=宽度 height=高度
-void LookImgNum::SetPixels(int* pixels, int width, int height, int byte)
+void LookImgNum::SetPixels(int* pixels, int width, int height, bool opengl, int byte)
 {
 	if (m_pPixels) {
 		if ((width * height) > (m_nMallocWidth * m_nMallocHeight)) { // 以前内存的不够了
@@ -37,16 +37,21 @@ void LookImgNum::SetPixels(int* pixels, int width, int height, int byte)
 		m_nMallocHeight = height;
 	}
 
+	m_bOpengl = opengl;
 	m_nWidth = width;
 	m_nHeight = height;
 	memcpy(m_pPixels, pixels, width*height*byte);
 
-	printf("");
+	//printf("SetPixels Ok\n");
 }
 
 // 获取像数信息
 int LookImgNum::GetPixel(int x, int y)
 {
+	//printf("GetPixel:%d,%d\n", x, y);
+	if (0 && m_bOpengl)
+		return m_pPixels[(m_nHeight-y-1)* m_nWidth + x];
+
 	return m_pPixels[y * m_nWidth + x];
 }
 

@@ -1,4 +1,5 @@
 #include "Game.h"
+#include "Driver.h"
 #include "Emulator.h"
 #include "PrintScreen.h"
 #include "Talk.h"
@@ -38,15 +39,20 @@ void Emulator::SetPath(char * path)
 void Emulator::ExecCmdLd(const char* cmd, int index)
 {
 	char cmdline[128];
-#if 1
+#if 0
 	sprintf(cmdline, "/C %s -s %d %s", m_chLd, index, cmd);
 	ShellExecuteA(NULL, "open", "cmd", cmdline, NULL, SW_HIDE);
 	return;
 #endif
 #if 0
-	char cmdline[128];
-	sprintf(cmdline, "%s -s %d %s", m_chLd, index, cmd);
-	system(cmdline);
+	if (strstr(cmd, "swipe")) {
+		::sprintf(cmdline, "%s -s %d %s", m_chLd, index, cmd);
+		system(cmdline);
+	}
+	else{
+		::sprintf(cmdline, "/C %s -s %d %s", m_chLd, index, cmd);
+		ShellExecuteA(NULL, "open", "cmd", cmdline, NULL, SW_HIDE);
+	}
 #else
 	SECURITY_ATTRIBUTES sa;
 	HANDLE hRead, hWrite;
@@ -292,6 +298,9 @@ void Emulator::WatchInGame(_account_* account)
 			LOGVARP2(log, "c0", L"%hs模拟器已启动完毕", account->Name);
 			LOGVARP2(log, "c0", L"%hs等待进入游戏...", account->Name);
 			is_print = true;
+
+			m_pGame->m_pDriver->SetProtectVBoxPid(m->VBoxPid);
+			m_pGame->m_pPrintScreen->InjectVBox(m_pGame->m_chPath, m->UiPid);
 		}
 		//printf("已初始化完毕(%d)\n", time(nullptr));
 		//Setprop("account_index", m->Account->Index, m->Index); // 设置绑定属性
@@ -312,6 +321,9 @@ void Emulator::WatchInGame(_account_* account)
 				LOGVARP2(log, "c0", L"%hs已进入登录界面", account->Name);
 				m_pGame->SetStatus(m->Account, ACCSTA_LOGIN, true); // 设置登录状态
 
+				m_pGame->m_pGameProc->SwitchGameWnd(m->Wnd);
+				m_pGame->m_pGameProc->SwitchGameAccount(m->Account);
+#if 0
 				DbgPrint("点击登录帐号图标\n");
 				LOGVARP2(log, "blue", L"点击登录帐号图标");
 				Tap(1205, 155, m->Index);
@@ -344,6 +356,21 @@ void Emulator::WatchInGame(_account_* account)
 				DbgPrint("点击登录\n");
 				LOGVARP2(log, "blue", L"点击登录");
 				Tap(575, 405, m->Index);
+#else
+				DbgPrint("点击进入游戏\n");
+				LOG2(L"点击进入游戏", "blue_r b");
+				m_pGame->m_pGameProc->Click(600, 505, 700, 530);
+				Sleep(1000);
+
+				DbgPrint("点击弹框登录\n");
+				LOG2(L"点击弹框登录", "blue_r b");
+				m_pGame->m_pGameProc->Click(526, 436, 760, 466);
+				Sleep(1000);
+
+				DbgPrint("点击登录\n");
+				LOG2(L"点击登录", "blue_r b");
+				m_pGame->m_pGameProc->Click(575, 405);
+#endif
 
 				account->IsLogin = 1;
 

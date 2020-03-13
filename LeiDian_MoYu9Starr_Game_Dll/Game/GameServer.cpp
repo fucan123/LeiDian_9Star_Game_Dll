@@ -15,7 +15,7 @@ Game* GameServer::m_pGame = nullptr;
 GameServer::GameServer(Game * p)
 {
 	m_pGame = p;
-	m_pJsCall = p->m_pJsCall;
+	m_iOpenFBTime = 0;
 }
 
 void GameServer::SetSelf(GameServer * p)
@@ -234,7 +234,7 @@ void GameServer::CanInFB(_account_ * p, const char * data, int len)
 	if (m_pGame->IsAllReady()) {
 		m_iCreateTeam = 0;
 		printf("CanInFB->询问项链\n");
-		AskXLCount();
+		AskXLCount("可以进副本");
 	}
 }
 
@@ -313,7 +313,21 @@ void GameServer::GetXL(_account_* p, const char * data, int len)
 	printf("%hs 拥有项链:%d (%d/%d)\n", p->Name, p->XL, m_iRecvXL+1, m_iSendXL);
 	LOGVARP(log, L"%hs拥有项链:%d (%d/%d)", p->Name, p->XL, m_iRecvXL + 1, m_iSendXL);
 
+	if (!m_iSendXL) {
+		LOGVARP2(log, "red b", L"询问项链数量为零, 不开启副本");
+		++m_iRecvXL;
+		return;
+	}
+
 	if (++m_iRecvXL >= m_iSendXL) {
+		__int64 now_time = time(nullptr);
+		if (m_iOpenFBTime) {
+			if ((m_iOpenFBTime + 30) > now_time) {
+				LOGVARP2(log, "red b", L"30秒内已经有人开启了副本");
+				return;
+			}
+		}
+		m_iOpenFBTime = now_time;
 		bool big_in = false; // 是否大号进
 		SYSTEMTIME stLocal;
 		::GetLocalTime(&stLocal);
@@ -321,7 +335,7 @@ void GameServer::GetXL(_account_* p, const char * data, int len)
 			big_in = stLocal.wHour == 23 ? stLocal.wMinute < 59 : true; // 至少需要1分钟
 		}
 		if (big_in) {
-			LOG2(L"由[大号]开启副本\n", "blue b");
+			LOGVARP2(log, "blue b", L"由[大号]开启副本(%d)\n", m_iRecvXL);
 			for (int xxx = 0; xxx < 45; xxx++) {
 				//Sleep(1000);
 			}
@@ -399,7 +413,7 @@ void GameServer::OffLine(_account_ * p, const char * data, int len)
 }
 
 // 询问项链数量
-void GameServer::AskXLCount()
+void GameServer::AskXLCount(const char* msg)
 {
 	if (m_pGame->ClockShutDown(0))
 		return;
@@ -421,7 +435,7 @@ void GameServer::AskXLCount()
 	}
 
 	printf("询问进副本项链数量, 询问数量:%d\n", m_iSendXL);
-	LOGVARP(log, L"询问进副本项链数量,询问数量:%d", m_iSendXL);
+	LOGVARP(log, L"询问进副本项链数量,询问数量:%d(%hs)", m_iSendXL, msg);
 }
 
 // 发送数据
@@ -533,7 +547,7 @@ void GameServer::OnRead(SOCKET client, int index, int opcode, const char* data, 
 		break;
 	case SCK_NOYAOSI: // 大号没有钥匙
 		self->m_iNoYaosi = 1;
-		self->AskXLCount();
+		//self->AskXLCount("大号没有钥匙");
 		break;
 	case SCK_PICKUPITEM: // 捡物品
 		self->PickUpItem(p, data, len);

@@ -35,30 +35,33 @@ void Talk::SelectNPC(int no)
 DWORD Talk::NPC(const char* name)
 {
 	// 对话按钮坐标[875,340 912,388]
-	m_pGame->m_pEmulator->Tap(MyRand(875, 912), MyRand(350, 376));
-	//m_pGame->m_pGameProc->Click(875, 350, 912, 376);
+	//m_pGame->m_pEmulator->Tap(MyRand(875, 912), MyRand(350, 376));
+	m_pGame->m_pGameProc->Click(875, 350, 912, 376);
 	return 0;
 }
 
 // NPC对话选择项
-void Talk::Select(DWORD no)
+void Talk::Select(DWORD no, bool show_log)
 {
+	if (show_log)
+		LOGVARN2(32, "c6", L"选项:0x%02d", no);
+
 	// 第一个 67,360 456,393
 	// 第二个 67,425 456,460
 	// 第三个 67,425 456,460
 	if (no == 0) {
-		m_pGame->m_pEmulator->Tap(MyRand(67, 368), MyRand(360, 393));
-		//m_pGame->m_pGameProc->Click(67, 360, 368, 393);
+		//m_pGame->m_pEmulator->Tap(MyRand(67, 368), MyRand(360, 393));
+		m_pGame->m_pGameProc->Click(67, 360, 368, 393);
 		return;
 	}
 	if (no == 1) {
-		m_pGame->m_pEmulator->Tap(MyRand(67, 368), MyRand(425, 460));
-		//m_pGame->m_pGameProc->Click(67, 425, 368, 460);
+		//m_pGame->m_pEmulator->Tap(MyRand(67, 368), MyRand(425, 460));
+		m_pGame->m_pGameProc->Click(67, 425, 368, 460);
 		return;
 	}
 	if (no == 2) {
-		m_pGame->m_pEmulator->Tap(MyRand(67, 368), MyRand(503, 535));
-		//m_pGame->m_pGameProc->Click(67, 503, 368, 535);
+		//m_pGame->m_pEmulator->Tap(MyRand(67, 368), MyRand(503, 535));
+		m_pGame->m_pGameProc->Click(67, 503, 368, 535);
 		return;
 	}
 }
@@ -101,11 +104,11 @@ bool Talk::WaitTalkClose(int index, DWORD ms)
 	if (ms == 0)
 		ms = 1500;
 
-	for (int i = 0; i < ms; i += 100) {
+	for (int i = 0; i < ms; i += 50) {
 		if (!NPCTalkStatus(index))
 			return true;
 
-		Sleep(100);
+		Sleep(50);
 	}
 	return false;
 }
@@ -135,9 +138,14 @@ void Talk::CloseLianGongChangBox()
 // 聊天窗口是否已打开
 bool Talk::SpeakIsOpen()
 {
-	// 截取的是左下角鸽子图标
+	// 截取的是左下角鸽子图标(飞鸽子)
 	m_pGame->m_pPrintScreen->CopyScreenToBitmap(m_pGame->m_pGameProc->m_hWndGame, 42, 682, 52, 692, 0, true);
-	return m_pGame->m_pPrintScreen->ComparePixel("聊天已打开", nullptr, 1) > 0;
+	if (m_pGame->m_pPrintScreen->ComparePixel("聊天已打开", nullptr, 1) > 0)
+		return true;
+
+	// 截取的是左下角背景颜色(聊天)
+	m_pGame->m_pPrintScreen->CopyScreenToBitmap(m_pGame->m_pGameProc->m_hWndGame, 100, 620, 110, 630, 0, true);
+	return m_pGame->m_pPrintScreen->ComparePixel("聊天已打开2", nullptr, 1) > 0;
 }
 
 // 关闭聊天窗口
@@ -242,7 +250,7 @@ bool Talk::IsInLoginPic(HWND hwnd)
 		hwnd = m_pGame->m_pGameProc->m_hWndGame;
 
 	// 右侧帐号图标
-	m_pGame->m_pPrintScreen->CopyScreenToBitmap(hwnd, 1205, 140, 1220, 155, 0, true);
+	m_pGame->m_pPrintScreen->CopyScreenToBitmap(hwnd, 1205, 140, 1215, 150, 0, true);
 	return m_pGame->m_pPrintScreen->ComparePixel("登录按钮", nullptr, 1) > 0;
 }
 
@@ -275,6 +283,11 @@ bool Talk::WaitForInGamePic(DWORD ms)
 		if (IsInGamePic())
 			return true;
 
+		if (i > 0 && (i % 5) == 0) {
+			if (CloseAllBox())
+				Sleep(600);
+		}
+
 		Sleep(200);
 	}
 	return false;
@@ -298,14 +311,16 @@ void Talk::CloseCommonBox()
 }
 
 // 关闭所有遮挡层
-void Talk::CloseAllBox()
+bool Talk::CloseAllBox()
 {
 	while (!IsInGamePic()) { // 有其他遮挡层
 		if (CommonBoxIsOpen()) {
 			CloseCommonBox();
+			return true;
 		}
 		else if (SpeakIsOpen()) {
 			CloseSpeakBox();
+			return true;
 		}
 		else {
 			// 关闭按钮
@@ -313,6 +328,7 @@ void Talk::CloseAllBox()
 			ComPoint cp[32];
 			if (m_pGame->m_pPrintScreen->ComparePixel("关闭按钮", cp, sizeof(cp)/sizeof(ComPoint))) {
 				m_pGame->m_pGameProc->Click(cp[0].x, cp[0].y);
+				return true;
 			}
 			else {
 				break;
@@ -320,4 +336,6 @@ void Talk::CloseAllBox()
 		}
 		Sleep(800);
 	}
+
+	return false;
 }

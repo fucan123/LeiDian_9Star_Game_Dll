@@ -14,6 +14,8 @@ public:
 	void SetFree(bool v);
 	// 是否有效
 	bool IsValid();
+	// 转移
+	bool GetInCard(const char* card);
 	// 充值
 	bool Recharge(const char* card);
 	// 验证
