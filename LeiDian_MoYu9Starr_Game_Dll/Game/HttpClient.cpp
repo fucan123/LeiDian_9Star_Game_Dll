@@ -1,4 +1,5 @@
 #include "HttpClient.h"
+#include <My/Common/Des.h>
 
 HTTP_STATUS HttpClient::Request(const WCHAR* host, const WCHAR* path, std::string& result, int type)
 {
@@ -22,7 +23,7 @@ HTTP_STATUS HttpClient::Request(const WCHAR* host, const WCHAR* path, std::strin
 		CHttpFile* pFile = pServer->OpenRequest(type, path);
 		CString strHeaders = _T("Content-Type: application/x-www-form-urlencoded"); // 请求头
 		
-		if (!m_Cookie.IsEmpty()) {
+		if (0 && !m_Cookie.IsEmpty()) {
 			CString cookie;
 			if (m_Cookie.Find(L"Cookie") == 0) {
 				cookie += m_Cookie;
@@ -50,8 +51,9 @@ HTTP_STATUS HttpClient::Request(const WCHAR* host, const WCHAR* path, std::strin
 		//printf("发送请求！\n");
 		
 		pFile->QueryInfoStatusCode(status);
-		//printf("HTTP CODE:%d %s\n", status, result.c_str());
+		printf("HTTP CODE:%d %s\n", status, result.c_str());
 		if (status == HTTP_STATUS_OK) {
+			//printf("读取网页内容\n"); // 读取网页内容
 			CString newline;
 			while (pFile->ReadString(newline)) { // 循环读取每行内容 
 				std::string str;
@@ -63,7 +65,7 @@ HTTP_STATUS HttpClient::Request(const WCHAR* host, const WCHAR* path, std::strin
 					str = (const char*)newline.GetBuffer();
 					//printf("%s\n", newline.GetBuffer());
 				}
-				//printf("sss: %s\n", str.c_str());
+				//printf("%s\n", str.c_str());
 				result += str;
 			}
 			//printf("内容:%s结束\n", result.c_str()); // 显示返回内容 
@@ -78,7 +80,7 @@ HTTP_STATUS HttpClient::Request(const WCHAR* host, const WCHAR* path, std::strin
 		TCHAR szErr[1024];
 		CString strInfo;
 		pEx->GetErrorMessage(szErr, 1024);
-		MessageBox(NULL, szErr, L"oo", MB_OK);
+		//MessageBox(NULL, szErr, L"oo", MB_OK);
 		printf("错误:服务器未响应！！！\n"); // 显示异常信息 
 		status = 0;
 	}

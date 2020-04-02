@@ -4,21 +4,35 @@
 #include "Game/Game.h"
 #include "Game/GameProc.h"
 #include "Game/Driver.h"
+#include "Game/Home.h"
 #include "stdafx.h"
 
 #include "h.h"
+#include <My/Win32/PE.h>
+#include <My/Win32/Peb.h>
 
 // 无法识别的标志“-Ot”(在“p2”中) 选择vs2017编译 其他链接不上
 // _DllMain@12 已经在 mfcs140u.lib(dllmodul.obj) 中定义 删除_USERDLL
 
 Game game;
 
+// 游戏是否激活
+DLLEXPORT bool WINAPI Game_IsValid()
+{
+	return game.m_pHome->IsValid();
+}
+
 // 初始化游戏机
-void WINAPI Game_Init(HWND hWnd, const char* conf_path)
+DLLEXPORT void WINAPI Game_Init(HWND hWnd, const char* conf_path)
 {
 #if 0
 	AllocConsole();
 	freopen("CON", "w", stdout);
+#endif
+#if 0
+	pfnNtQuerySetInformationThread f = (pfnNtQuerySetInformationThread)GetNtdllProcAddress("ZwSetInformationThread");
+	NTSTATUS sta = f(GetCurrentThread(), ThreadHideFromDebugger, NULL, 0);
+	::printf("sta:%d\n", sta);
 #endif
 
 	printf("Game_Init\n");

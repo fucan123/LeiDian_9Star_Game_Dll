@@ -73,6 +73,10 @@ void Game::Init(HWND hWnd, const char* conf_path)
 	ZeroMemory(&m_Setting, sizeof(m_Setting));
 
 	m_nStartTime = time(nullptr);
+
+	// 保护当前进程
+	m_pDriver->InstallDriver(m_chPath);
+	m_pDriver->SetProtectPid(GetCurrentProcessId());
 }
 
 // ...
@@ -95,7 +99,6 @@ void Game::Listen(USHORT port)
 void Game::Run()
 {
 	// 保护当前进程
-	m_pDriver->SetProtectPid(GetCurrentProcessId());
 	m_pDriver->SetHidePid(GetCurrentProcessId());
 
 	//DbgPrint("Game::Run!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
@@ -133,12 +136,11 @@ _try_fs_install_:
 			if (try_fs) {
 				try_fs = false;
 				LOG2(L"启动文件保护驱动失败, 准备重试.", "red b");
-#if 1
+#if 0
 				system("sc stop DriverFs999");
 				system("sc delete DriverFs999");
 #else
-				ShellExecuteA(NULL, "open", "cmd", "/C sc stop DriverFs999", NULL, SW_HIDE);
-				ShellExecuteA(NULL, "open", "cmd", "/C sc delete DriverFs999", NULL, SW_HIDE);
+				m_pGame->m_pDriver->Delete(L"DriverFs999");
 #endif
 				goto _try_fs_install_;
 			}
@@ -152,14 +154,15 @@ _try_fs_install_:
 		LOG2(L"安装文件保护驱动失败.", "red b");
 	}
 
-	//DbgPrint("!m_pEmulator->List2!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+	//printf("!m_pEmulator->List2!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
 	m_pEmulator->List2();
 	m_pGameData->m_pAccoutBig = m_pBig; // 大号
 	m_pBig->IsLogin = 1;
+	//printf("m_pBig->Mnq.\n");
 	if (m_pBig->Mnq && m_pBig->Mnq->UiPid) {
 		m_pPrintScreen->InjectVBox(m_chPath, m_pBig->Mnq->UiPid);
 		Sleep(500);
-		printf("m_pTalk->IsInLoginPic\n");
+		//printf("m_pTalk->IsInLoginPic\n");
 		if (m_pTalk->IsInLoginPic(m_pBig->Mnq->Wnd)) {
 			printf("在登录页面\n");
 		}
@@ -169,7 +172,7 @@ _try_fs_install_:
 	//DbgPrint("!m_pGameData->WatchGame!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
 	m_pGameData->WatchGame();
 	m_pDriver->SetProtectVBoxPid(m_pBig->Mnq->VBoxPid);
-	//m_pDriver->SetHidePid(m_pBig->Mnq->VBoxPid);
+	m_pDriver->SetHidePid(m_pBig->Mnq->VBoxPid);
 
 	while (true) {
 		if (m_pBig->Addr.MoveX)
@@ -386,12 +389,13 @@ bool Game::AutoLogin(const char* remark)
 	if (!IsAutoLogin())
 		return false;
 
+	LOGVARP2(log, "c6", L"AutoLogin:%hs\n", remark);
 	if (m_iLoginCount == 0) { // 没有要登录的帐号
 		LOG(L"没有要登录的帐号");
 		LoginCompleted();
 		return false;
 	}
-		
+
 	if (m_iLoginFlag >= 0 && m_iLoginIndex != m_iLoginFlag) { // 只登一个账号
 		LOG(L"只登一个账号");
 		LoginCompleted();
@@ -408,9 +412,12 @@ bool Game::AutoLogin(const char* remark)
 	}
 	if (login_count == 0 || (login_count == 1 && IsOnline(m_pBig))) // 没有人在线或只有大号在线
 		m_pGame->m_iSendCreateTeam = 1;
-	
+
 #if 1
 	Account* p = GetAccount(m_iLoginIndex);
+	while (p && p->LockLogin) { // 不登陆的帐号
+		p = GetAccount(++m_iLoginIndex);
+	}
 	if (!p) // 不存在
 		return false;
 	if (IsLogin(p) || (p->IsBig && m_Setting.LogoutByGetXL)) { // 已在登录或已登录 或大号不领项链
@@ -536,6 +543,18 @@ int Game::CheckLoginTimeOut()
 			AutoPlay(-1, false);
 			return 0;
 		}
+	}
+
+	if ((now_time - m_nVerifyTime) > 120) {
+		//printf("验证.\n");
+		if (!m_pHome->Verify()) {
+			if (++m_nVerifyError >= 3) {
+				m_pGame->m_pGameProc->m_bNoVerify = true;
+				m_pHome->SetExpire(0);
+				m_nVerifyError = 0;
+			}
+		}
+		m_nVerifyTime = now_time;
 	}
 
 	int count = 0;
@@ -1274,7 +1293,7 @@ void Game::ReadSetting(const char* data)
 {
 	char tmp[16] = { 0 };
 	Explode explode("=", data);
-	if (strcmp(explode[0], "哈哈") == 0) {
+	if (strcmp(explode[0], "无限.") == 0) {
 		if (strcmp(explode[1], "无限期+永久") == 0)
 			m_pHome->SetFree(true);
 	}
@@ -1560,6 +1579,13 @@ void Game::PutSetting(const wchar_t* name, int v)
 		m_Setting.TalkOpen = v;
 		LOGVARN2(64, "cb", L"修改.喊话开启:%hs.", v ? "是" : "否");
 	}
+	else if (wcsstr(name, L"account_locklogin")) {
+		Account* account = GetAccount(_wtoi(name + 18));
+		if (account && !account->IsBig) {
+			account->LockLogin = v;
+			LOGVARN2(64, "cb", L"修改.帐号(%hs)%hs.", account->Name, v ? "不登陆" : "登陆");
+		}
+	}
 }
 
 // 设置
@@ -1669,13 +1695,13 @@ void Game::GetInCard(const wchar_t * card)
 
 	wchar_t msg[128];
 	if (m_pHome->GetInCard(value)) {
-		wsprintfW(msg, L"%hs", m_pHome->GetMsgStr().c_str());
+		wsprintfW(msg, L"%hs", m_pHome->GetMsgStr());
 		UpdateText("card_date", m_pHome->GetExpireTime_S().c_str());
 		UpdateStatusText(msg, 2);
 		Alert(msg, 1);
 	}
 	else {
-		wsprintfW(msg, L"%hs", m_pHome->GetMsgStr().c_str());
+		wsprintfW(msg, L"%hs", m_pHome->GetMsgStr());
 		UpdateStatusText(msg, 3);
 		Alert(msg, 2);
 	}
@@ -1690,13 +1716,13 @@ void Game::VerifyCard(const wchar_t * card)
 
 	wchar_t msg[128];
 	if (m_pHome->Recharge(value)) {
-		wsprintfW(msg, L"%hs", m_pHome->GetMsgStr().c_str());
+		wsprintfW(msg, L"%hs", m_pHome->GetMsgStr());
 		UpdateText("card_date", m_pHome->GetExpireTime_S().c_str());
 		UpdateStatusText(msg, 2);
 		Alert(msg, 1);
 	}
 	else {
-		wsprintfW(msg, L"%hs", m_pHome->GetMsgStr().c_str());
+		wsprintfW(msg, L"%hs", m_pHome->GetMsgStr());
 		UpdateStatusText(msg, 3);
 		Alert(msg, 2);
 	}
@@ -1713,7 +1739,7 @@ void Game::UpdateVer()
 void Game::UpdateAccountStatus(Account * account)
 {
 	UpdateTableText(nullptr, account->Index, 2, account->StatusStrW);
-	if (account->LastTime) {
+	if (0 && account->LastTime) {
 		char time_str[64];
 		time2str(time_str, account->LastTime, 8);
 		UpdateTableText(nullptr, account->Index, 4, time_str);

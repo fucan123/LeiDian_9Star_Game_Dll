@@ -28,7 +28,7 @@ public:
 	// 使用药
 	void UseYao(int num=1, bool use_yaobao=true, int sleep_ms=500);
 	// 使用药包包
-	void UseYaoBao();
+	bool UseYaoBao();
 	// 去副本门口
 	void GoFBDoor();
 	// 去商店
@@ -50,11 +50,15 @@ public:
 	// 关闭拆分框
 	void CloseChaiFeiBox();
 	// 点击按钮捡东西
-	void PickUpItemByBtn();
+	bool PickUpItemByBtn();
+	// 仓库存钱按钮是否打开
+	bool SaveMoneyBtnIsOpen();
+	// 仓库解锁栏位按钮是否打开
+	bool StorageAddBtnIsOpen();
 	// 捡物
 	int PickUpItem(const char* name, int x, int y, int x2, int y2, int pickup_num=10);
 	// 等待捡起物品
-	int WaitForPickUpItem(DWORD wait_ms=3500);
+	bool WaitForPickUpItem(DWORD wait_ms=3500);
 	// 获取地面物品坐标
 	int GetGroundItemPos(const char* name, int x, int y, int x2, int y2, int& pos_x, int& pos_y, char* pick_name);
 	// 丢弃药包

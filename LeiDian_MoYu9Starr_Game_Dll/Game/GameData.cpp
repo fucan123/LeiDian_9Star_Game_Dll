@@ -91,6 +91,9 @@ void GameData::WatchGame()
 						m_pGame->m_pPrintScreen->InjectVBox(m_pGame->m_chPath, m->UiPid);
 					}
 
+					if (!m_DataAddr.PicScale)
+						ReadGameMemory();
+
 					m_pGame->SetGameAddr(m->Account, &m_DataAddr);
 					strcpy(m->Account->Role, name);
 					ReadLife(nullptr, nullptr, m->Account);
@@ -173,6 +176,12 @@ bool GameData::IsInShenDian(_account_* account)
 	return IsInArea(60, 60, 30, account);
 }
 
+// 是否在遗忘神域
+bool GameData::IsInShenYu(_account_ * account)
+{
+	return IsInArea(600, 300, 30, account);
+}
+
 // 是否在副本门口
 bool GameData::IsInFBDoor(_account_* account)
 {
@@ -182,32 +191,30 @@ bool GameData::IsInFBDoor(_account_* account)
 // 获取人物首地址
 bool GameData::FindPlayerAddr()
 {
-	//printf("FindPlayerAddr\n");
-	// 4:0x072CD498 4:0x00 4:0xFFFFFFFF 4:0x3F800000 4:0x00010001 4:0x000 4:0x072C4678 4:0x9A078100
+	//LOG2(L"FindPlayerAddr\n", "c6");
+	// 4:0x073B1190 4:0x00 4:0xFFFFFFFF 4:0x3F800000 4:0x00010001 4:0x000 4:0x072C4678 4:0x9A078100
 
-	// 4:0x00000000 4:0x0000DECE 4:0x00000000 4:0x00000001 4:0x00000000 4:0x00000030 4:0x00000000 4:0x0000DECE 4:0x00000000 4:0x00000001 4:0x00000000 4:0x00000030
+	// 4:0x073B1190 4:0x0000DECE 4:0x00000000 4:0x00000001 4:0x00000000 4:0x00000030 4:0x00000000 4:0x0000DECE 4:0x00000000 4:0x00000001 4:0x00000000 4:0x00000030
 	DWORD codes[] = {
-		0x073477B8, 0x00000000, 0xFFFFFFFF, 0x3F800000,
+		0x073AF2B8, 0x00000000, 0xFFFFFFFF, 0x3F800000,
 		0x00010001, 0x00000011, 0x00000011, 0x00000011,
 	};
 	DWORD address = 0;
 	if (SearchCode(codes, sizeof(codes) / sizeof(DWORD), &address)) {
 		DWORD data = 0;
 		bool result = ReadProcessMemory(m_hGameProcess, (LPVOID)address, &data, sizeof(data), NULL);
+		//printf("人物首地址:%08X Data:%08X\n", address, data);
 		//LOGVARN2(32, "blue", L"人物首地址:%08X Data:%08X", m_DataAddr.Player, data);
-		if ((data & 0x0fff) == 0x07B8) {
-			//LOGVARN2(32, "blue", L"人物首地址:%08X %08X", address, address & 0x0fff);
-			if ((address & 0x0fff) == 0x0000) {
-				m_DataAddr.Player = address;
-				m_DataAddr.Name = m_DataAddr.Player + NAME_OFFSET;
-				m_DataAddr.CoorX = m_DataAddr.Player + X_OFFSET;
-				m_DataAddr.CoorY = m_DataAddr.Player + Y_OFFSET;
-				m_DataAddr.Life = m_DataAddr.Player + LIFE_OFFSET;
-				m_DataAddr.LifeMax = m_DataAddr.Player + LIFE_MAX_OFFSET;
+		if ((address & 0x0fff) == 0x0000) {
+			m_DataAddr.Player = address;
+			m_DataAddr.Name = m_DataAddr.Player + NAME_OFFSET;
+			m_DataAddr.CoorX = m_DataAddr.Player + X_OFFSET;
+			m_DataAddr.CoorY = m_DataAddr.Player + Y_OFFSET;
+			m_DataAddr.Life = m_DataAddr.Player + LIFE_OFFSET;
+			m_DataAddr.LifeMax = m_DataAddr.Player + LIFE_MAX_OFFSET;
 
-				LOGVARN2(32, "blue", L"人物首地址:%08X", m_DataAddr.Player);
-				DbgPrint("人物首地址:%08X\n", m_DataAddr.Player);
-			}
+			LOGVARN2(32, "blue", L"人物首地址:%08X", m_DataAddr.Player);
+			DbgPrint("人物首地址:%08X\n", m_DataAddr.Player);
 		}
 	}
 
@@ -219,18 +226,37 @@ bool GameData::FindMoveCoorAddr()
 {
 	// 4:0x00000000 4:0x00000000 4:0x00000000 4:0x07328EF4 4:0x07328EF4
 	DWORD codes[] = {
-		0x07350938, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x073A3194, 0x073A3194, 0x07350938,
+		0x073B87D8, 0x00000000, 0x00000000, 0x00000000,
+		0x00000000, 0x07408E5C, 0x00001105, 0x00001100,
 	};
 	DWORD address = 0;
 	if (SearchCode(codes, sizeof(codes) / sizeof(DWORD), &address)) {
 		//LOGVARN2(32, "blue", L"目的地坐标地址:%08X %08X", address, address&0x0f);
-		if ((address & 0x0f) == 0x00) {
-			m_DataAddr.MoveX = address - 0x14;
+		if ((address & 0x0f) == 0x08) {
+			m_DataAddr.MoveX = address - 0x0C;
 			m_DataAddr.MoveY = m_DataAddr.MoveX + 4;
 
 			LOGVARN2(32, "blue", L"目的地坐标地址:%08X", m_DataAddr.MoveX);
 			DbgPrint("目的地坐标地址:%08X\n", m_DataAddr.MoveX);
+		}
+	}
+
+	return address != 0;
+}
+
+// 获取画面缩放数值地址
+bool GameData::FindPicScale()
+{
+	DWORD codes[] = {
+		0x00000000, 0x00000000, 0x00000000, 0x3F800000,
+		0x00000080, 0x00001234, 0x00001234, 0x00000011,
+	};
+	DWORD address = 0;
+	if (SearchCode(codes, sizeof(codes) / sizeof(DWORD), &address)) {
+		if ((address & 0xff) == 0x5C) {
+			m_DataAddr.PicScale = address + 0x10;
+
+			LOGVARN2(32, "blue", L"画面缩放地址:%08X", m_DataAddr.PicScale);
 		}
 	}
 
@@ -349,7 +375,7 @@ void GameData::WriteMoveCoor(DWORD x, DWORD y, _account_* account)
 			system(cmd);
 #else
 			wchar_t dll[256];
-			wsprintfW(dll, L"%hs\\win7\\wxy.dll", m_pGame->m_chPath);
+			wsprintfW(dll, L"%hs\\files\\wxy.dll", m_pGame->m_chPath);
 			InjectDll(account->Mnq->VBoxPid, dll, NULL, FALSE);
 #endif
 			m_bInDll = true;
@@ -376,11 +402,49 @@ void GameData::WriteMoveCoor(DWORD x, DWORD y, _account_* account)
 	}
 }
 
+// 写入画面数值
+bool GameData::WritePicScale(DWORD v, _account_* account)
+{
+	account = account ? account : m_pAccoutBig;
+	if (!account || !account->Mnq || !account->Addr.PicScale)
+		return false;
+
+	if (!m_bInDll && WriteProcessMemory(account->Mnq->Process, (PVOID)account->Addr.PicScale, &v, sizeof(v), NULL)) {
+		//printf("WriteMoveCoor长度:%d\n", write_len);
+	}
+	else {
+		wchar_t log[64];
+		//::printf("无法写入目的坐标(%d) %08X\n", GetLastError(), account->Addr.MoveX);
+		if (!m_pShareBuffer) {
+			DbgPrint("无法继续进行\n");
+			LOGVARP2(log, "red", L"无法继续进行(!WritePicScale.%d)", GetLastError());
+			return false;
+		}
+
+		if (!m_bInDll) {
+			wchar_t dll[256];
+			wsprintfW(dll, L"%hs\\win7\\wxy.dll", m_pGame->m_chPath);
+			InjectDll(account->Mnq->VBoxPid, dll, NULL, FALSE);
+			m_bInDll = true;
+		}
+
+		// 映射对象的一个视图，得到指向共享内存的指针，设置里面的数据
+		m_pShareBuffer = (ShareWriteXYData*)::MapViewOfFile(m_hShareMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+
+		m_pShareBuffer->AddrPic = account->Addr.PicScale;
+		m_pShareBuffer->PicScale = v;
+		m_pShareBuffer->Flag = 2; // Dll写入
+	}
+
+	return true;
+}
+
 // 搜索特征码
 DWORD GameData::SearchCode(DWORD* codes, DWORD length, DWORD* save, DWORD save_length, DWORD step)
 {
 	if (length == 0 || save_length == 0)
 		return 0;
+
 
 	DWORD count = 0;
 	for (DWORD i = 0; i < m_dwReadSize; i += step) {
@@ -389,8 +453,8 @@ DWORD GameData::SearchCode(DWORD* codes, DWORD length, DWORD* save, DWORD save_l
 
 		DWORD addr = m_dwReadBase + i;
 		if (addr == (DWORD)codes) { // 就是自己
-			//::printf("搜索到了自己:%08X\n", codes);
-			return 0;
+			//::printf("搜索到了自己:%08X %08X\n", codes, codes[0]);
+			//return 0;
 		}
 
 		DWORD* dw = (DWORD*)(m_pReadBuffer + i);
@@ -421,7 +485,7 @@ DWORD GameData::SearchCode(DWORD* codes, DWORD length, DWORD* save, DWORD save_l
 				}
 			}
 			else {
-				if ((codes[j] & 0xff00) == 0x1100) { // 比较两个地址数值相等 最低8位为比较索引
+				if ((codes[j] & 0xffffff00) == 0x00001100) { // 比较两个地址数值相等 最低8位为比较索引
 					//::printf("%X:%X %08X:%08X\n", j, codes[j] & 0xff, dw[j], dw[codes[j] & 0xff]);
 					if (dw[j] != dw[codes[j] & 0xff]) {
 						result = false;
@@ -429,6 +493,9 @@ DWORD GameData::SearchCode(DWORD* codes, DWORD length, DWORD* save, DWORD save_l
 					}
 				}
 				else if (dw[j] != codes[j]) { // 两个数值不相等
+					if (0 && m_dwReadBase >= 0x247DD000 && m_dwReadBase < 0x247DE000 && i == 0) {
+						printf("%d.m_dwReadBase!=0x4F67C000 %08X=%08X\n", j, dw[j], codes[j]);
+					}
 					result = false;
 					break;
 				}
@@ -557,7 +624,8 @@ bool GameData::ReadGameMemory(DWORD flag)
 				m_dwReadSize = (dwReadSize + dwOneReadSize) <= mbi.RegionSize
 					? dwOneReadSize : mbi.RegionSize - dwReadSize;
 
-				if (ReadProcessMemory(m_hGameProcess, (LPVOID)pTmpReadAddress, m_pReadBuffer, m_dwReadSize, NULL)) {
+				SIZE_T write_len = 0;
+				if (ReadProcessMemory(m_hGameProcess, (LPVOID)pTmpReadAddress, m_pReadBuffer, m_dwReadSize, &write_len)) {
 					//::printf("flag:%08X %p-%p\n", flag, ReadAddress, ReadAddress + mbi.RegionSize);
 
 					if (flag & 0x01) {
@@ -570,7 +638,11 @@ bool GameData::ReadGameMemory(DWORD flag)
 							if (FindMoveCoorAddr())
 								find_num++;
 						}
-						if (find_num == 2)
+						if (!m_DataAddr.PicScale) {
+							if (FindPicScale())
+								find_num++;
+						}
+						if (find_num == 3)
 							flag = 0;
 					}
 					if (!flag) {

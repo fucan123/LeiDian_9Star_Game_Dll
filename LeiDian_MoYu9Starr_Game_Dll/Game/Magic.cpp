@@ -20,42 +20,79 @@ int Magic::UseMagic(const char* name, int mv_x, int mv_y)
 		if (!mv_x && !mv_y) {
 			DWORD use_ms = GetTickCount();
 			DbgPrint("使用技能:%s(%d,%d)\n", name, click_x, click_y);
-			LOGVARP2(log, "c6", L"使用技能:%hs(%d,%d)", name, click_x, click_y);
-			m_pGame->m_pGameProc->Click(click_x, click_y);
+			LOGVARP2(log, "c6", L"1.使用技能:%hs(%d,%d)", name, click_x, click_y);
 
-			int wait_ms = strcmp(name, "最终审判") == 0 ? 2500 : 1000;
-			for (int i = 1; i <= 10; i++) {
+			DWORD use_ms_2 = use_ms;
+			if (m_pGame->m_pGameProc->m_nBossNum >= 0 && strcmp(name, "最终审判") == 0) {
+				UseShenPan(click_x, click_y);
+				return 1;
+				for (int j = 0; j < 300; j += 100) {
+					m_pGame->m_pGameProc->Click(click_x, click_y);
+					Sleep(100);
+				}
+			}
+			else {
+				m_pGame->m_pGameProc->Click_Send(click_x, click_y);
+			}
+
+			int wait_ms = strcmp(name, "最终审判") == 0 ? 300 : 1000;
+			for (int i = 1; i <= 6; i++) {
 				if (i > 2) {
 					if (m_pGame->m_pMove->IsOpenMap()) { // 是否已打开了地图
 						m_pGame->m_pMove->CloseMap();
 					}
 				}
 
-				Sleep(100);
-				for (int j = 0; j < wait_ms; j += 100) {
-					if (m_pGame->m_pGameProc->m_bPause)
-						break;
-
-					int result = MagicIsOut(name);
-					if (result == -1) {
-						return -1;
-					}
-					if (result > 0) {
-						DWORD ms = GetTickCount() - use_ms;
-						if (ms >= 300) {
-							DbgPrint("技能:%s(%d)已完成释放, 用时:%d毫秒\n", name, m_nPixelCount, ms);
-							LOGVARP2(log, "c6", L"技能:%hs<b class='c3'>(%d)</b>已释放, 用时:<b class='c3'>(%d)</b>毫秒",
-								name, m_nPixelCount, ms);
+				if (strcmp(name, "最终审判") == 0) {
+					for (int n = 0; n < 2800; n += 50) {
+						Sleep(50);
+						if (MagicIsOut(name)) {
+							LOGVARP2(log, "c6", L"技能:%hs(%d)已完成释放, 用时:<b class='c3'>(%d)</b>毫秒",
+								name, m_nPixelCount, int(GetTickCount()-use_ms));
 							return 1;
 						}
 					}
-
-					Sleep(100);
 				}
-				DbgPrint("%d.再次使用技能:%s(%d,%d)\n", i + 1, name, click_x, click_y);
-				LOGVARP2(log, "c6", L"%d.再次使用技能:%hs(%d,%d)", i + 1, name, click_x, click_y);
+				else {
+					DWORD ms_one = GetTickCount(), ms_two = ms_one;
+					while ((ms_two - ms_one) < wait_ms) {
+						if (m_pGame->m_pGameProc->m_bPause)
+							break;
 
-				m_pGame->m_pGameProc->Click(click_x, click_y);
+						Sleep(10);
+						int result = MagicIsOut(name);
+						if (result == -1) {
+							return -1;
+						}
+						if (result > 0) {
+							DWORD ms = GetTickCount() - use_ms;
+							if (ms >= 300) {
+								DbgPrint("技能:%s(%d)已完成释放, 用时:%d毫秒\n", name, m_nPixelCount, ms);
+								LOGVARP2(log, "c6", L"技能:%hs(%d)已释放, 用时:(%d)毫秒",
+									name, m_nPixelCount, ms);
+								return 1;
+							}
+						}
+
+						ms_two = GetTickCount();
+					}
+				}
+				
+				DWORD _ms = GetTickCount();
+				DbgPrint("%d.再次使用技能:%s(%d,%d)\n", i + 1, name, click_x, click_y);
+				LOGVARP2(log, "c6", L"%d.再次使用技能:%hs(%d,%d) %d/%d", i + 1, name, click_x, click_y,
+					_ms - use_ms_2, _ms - use_ms);
+				
+				use_ms_2 = _ms;
+				if (0 && strcmp(name, "最终审判") == 0) {
+					for (int j = 0; j < 300; j += 100) {
+						m_pGame->m_pGameProc->Click(click_x, click_y);
+						Sleep(100);
+					}
+				}
+				else {
+					m_pGame->m_pGameProc->Click_Send(click_x, click_y);
+				}
 			}
 			DbgPrint("技能:%s未放出\n", name);
 			LOGVARP2(log, "red", L"技能:%hs未放出\n", name);
@@ -71,6 +108,32 @@ int Magic::UseMagic(const char* name, int mv_x, int mv_y)
 		}
 	}
 
+	return 0;
+}
+
+// 使用最终审判
+int Magic::UseShenPan(int click_x, int click_y)
+{
+	int n = 0, flag = 0;
+	DWORD start_ms = GetTickCount(), use_ms, now_ms;
+	while (n++ < 10) {
+		use_ms = GetTickCount();
+		m_pGame->m_pGameProc->Click_Send(click_x, click_y);
+		now_ms = GetTickCount();
+		if ((now_ms - use_ms) >= 100) { // 接受事件达到200毫秒
+			flag = 1;
+			break;
+		}
+		if ((now_ms - start_ms) >= 400) {
+			flag = 2;
+			break;
+		}
+		Sleep(100);
+	}
+
+	DWORD ms = GetTickCount() - start_ms;
+	LOGVARN2(64, "c6", L"技能:最终审判已完成(%d), 次数:(%d), 用时:(%d)毫秒",
+		flag, n, ms);
 	return 0;
 }
 
@@ -107,7 +170,7 @@ void Magic::GetMagicClickPos(const char* name, int& x, int& y)
 int Magic::MagicIsOut(const char* name)
 {
 	DWORD color = 0xFFFFFFFF, diff = 0x003A3A3A;
-	int need_count = 20;
+	int need_count = 60;
 	int max_count = 300;
 
 	int x = 0, y = 0, x2 = 0, y2 = 0;

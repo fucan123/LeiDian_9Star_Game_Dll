@@ -4,6 +4,7 @@
 #include <string>
 
 #define HOME_HOST      L"fz.myhostcpp.com"
+//#define HOME_HOST      L"www.fuzhu.com"
 #define HOME_GAME_FLAG "1"
 
 class Home
@@ -23,7 +24,7 @@ public:
 	// 获得此机器有效时间（秒）
 	int  GetExpire();
 	// 解析返回结果
-	void Parse();
+	void Parse(const char* msg);
 	// 获得返回结果中的值
 	bool GetValue(char* key, char value[], int length);
 	// 获得返回结果中的值
@@ -35,7 +36,11 @@ public:
 	// 设置到期时间
 	int  SetEndTime();
 	// 设置到期时间字符串
-	void SetExpireTime_S();
+	void SetExpireTime_S(time_t expire_time);
+	// 设置过期时间
+	void SetExpire(int t);
+	// 获得DES密钥
+	void GetDesKey(char save[17]);
 	// 获得到期时间字符串
 	std::string& GetExpireTime_S();
 	void SetError(int code, const char* str);
@@ -48,10 +53,10 @@ public:
 	void SetMsgStr(CString str);
 	void SetMsgStr(wchar_t* str, DWORD status);
 	void SetMsgStr(const char* str, DWORD status);
-	std::string& GetMsgStr();
+	const char* GetMsgStr();
 protected:
 	// 返回结果指针
-	char* m_pRepsone;
+	char m_pRepsone[256];
 	// 验证时间（秒）
 	int   m_iVerifyTime;
 	// 过期时间
@@ -69,7 +74,7 @@ protected:
 	// 网站返回内容
 	std::string m_sResult;
 	// 提示内容
-	std::string m_MsgStr;
+	char m_MsgStr[128];
 	// 过期时间
 	std::string m_sExpireTime;
 };

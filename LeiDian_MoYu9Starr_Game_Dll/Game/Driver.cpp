@@ -243,61 +243,85 @@ BOOL Driver::DeleteFsFilter()
 	return TRUE;
 }
 
+// 安装驱动
+bool Driver::InstallDriver(const char* path)
+{
+	CString file;
+	file = path;
+	file += L"\\files\\firenet.sys";
+
+	if (!IsFileExist(file)) {
+		//m_pJsCall->ShowMsg("缺少必需文件:firenet.sys", "文件不存在", 2);
+		LOG2(L"firenet.sys不存在", "red");
+		m_bIsInstallDll = false;
+		char kill[32];
+		sprintf_s(kill, "taskkill /f /t /pid %d", GetCurrentProcessId());
+		system(kill);
+		TerminateProcess(GetCurrentProcess(), 4);
+		return false;
+	}
+
+
+	bool is_try = false;
+_try_install_:
+	if (m_SysDll.Install(L"firenet_safe", L"safe fire", file)) {
+		LOG2(L"安装驱动成功", "green");
+		return true;
+	}
+	else {
+		if (!is_try) {
+			is_try = true;
+			LOG2(L"安装驱动失败, 准备重新尝试.", "red");
+#if 1
+			system("sc stop firenet_safe");
+			system("sc delete firenet_safe");
+#else
+			ShellExecuteA(NULL, "open", "cmd", "/C sc stop firenet_safe", NULL, SW_HIDE);
+			ShellExecuteA(NULL, "open", "cmd", "/C sc delete firenet_safe", NULL, SW_HIDE);
+#endif
+			goto _try_install_;
+		}
+		else {
+			m_SysDll.UnInstall();
+			char kill[32];
+			sprintf_s(kill, "taskkill /f /t /pid %d", GetCurrentProcessId());
+			system(kill);
+			TerminateProcess(GetCurrentProcess(), 4);
+			//LOG2(L"安装驱动失败, 请重启本程序再尝试.", "red");
+		}
+
+		//MessageBox(NULL, "安装驱动失败", "提示", MB_OK);
+		return false;
+	}
+}
+
 // 安装Dll驱动
 bool Driver::InstallDll(const char* path)
 {
 	if (!m_bIsInstallDll) {
-		CString file;
-		file = path;
-		file += L"\\files\\firenet.sys";
-
-		if (!IsFileExist(file)) {
-			//m_pJsCall->ShowMsg("缺少必需文件:firenet.sys", "文件不存在", 2);
-			LOG2(L"firenet.sys不存在", "red");
-			m_bIsInstallDll = false;
-			return false;
-		}
-
-		bool is_try = false;
-	_try_install_:
-		if (m_SysDll.Install(L"firenet_safe", L"safe fire", file)) {
-			LOG2(L"安装驱动成功", "green");
-			SetDll(path);
-			m_bIsInstallDll = true;
-			return true;
-		}
-		else {
-			if (!is_try) {
-				is_try = true;
-				LOG2(L"安装驱动失败, 准备重新尝试.", "red");
-#if 1
-				system("sc stop firenet_safe");
-				system("sc delete firenet_safe");
-#else
-				ShellExecuteA(NULL, "open", "cmd", "/C sc stop firenet_safe", NULL, SW_HIDE);
-				ShellExecuteA(NULL, "open", "cmd", "/C sc delete firenet_safe", NULL, SW_HIDE);
-#endif
-				goto _try_install_;
-			}
-			else {
-				m_SysDll.UnInstall();
-				LOG2(L"安装驱动失败, 请重启本程序再尝试.", "red");
-			}
-			
-			//MessageBox(NULL, "安装驱动失败", "提示", MB_OK);
-			return false;
-		}
+		SetDll(path);
+		m_bIsInstallDll = true;
 	}
 	else {
-		if (m_SysDll.UnInstall()) {
-			LOG2(L"卸载驱动成功", "green");
+		if (DelDll()) {
+			LOG2(L"删除dll成功", "green");
 			m_bIsInstallDll = false;
 			return true;
 		}
 		else {
-			LOG2(L"卸载驱动失败", "red");
+#if 0
+			system("sc stop firenet_safe");
+			system("sc delete firenet_safe");
+#else
+			Delete(L"firenet_safe");
+#endif
+			InstallDriver(path);
+			if (!DelDll()) {
+				LOGVARN2(32, "red", L"删除dll失败:%d", GetLastError());
+				return false;
+			}
 			//MessageBox(NULL, "卸载驱动失败", "提示", MB_OK);
-			return false;
+			return true;
 		}
 	}
 
@@ -352,17 +376,8 @@ bool Driver::SetDll(const char* path)
 		NULL);
 	printf("保护进程ID:%d %d\n", pid, result);
 
-	if (0 && !m_pGame->m_Setting.NoHideProc) {
-		result = DeviceIoControl(
-			hDevice,
-			IOCTL_SET_HIDE_PID,
-			&pid,
-			4,
-			&output,
-			sizeof(char),
-			&returnLen,
-			NULL);
-	}
+	// 设置隐藏进程
+	SetHidePid(pid);
 
 	char file[255];
 	sprintf_s(file, "%s\\files\\9Star.dll", path);
@@ -393,6 +408,7 @@ bool Driver::SetDll(const char* path)
 		LOG2(L"设置dll成功", "green");
 	}
 	else {
+		//LOGVARN2(32, "red", L"GetLastError:%d.\n", GetLastError());
 		LOG2(L"设置dll失败", "red");
 	}
 
@@ -400,6 +416,38 @@ bool Driver::SetDll(const char* path)
 		CloseHandle(hDevice);
 	}
 	return true;
+}
+
+// 删除要注入dll
+bool Driver::DelDll()
+{
+	HANDLE hDevice = CreateFileA("\\\\.\\CrashDumpUpload",
+		NULL,
+		NULL,
+		NULL,
+		OPEN_EXISTING,
+		NULL,
+		NULL);
+
+	if (hDevice == INVALID_HANDLE_VALUE) {
+		return false;
+	}
+
+	int     inv = 0;
+	char	output;
+	DWORD	returnLen;
+	BOOL result = DeviceIoControl(
+		hDevice,
+		IOCTL_DEL_INJECT_X86DLL,
+		&inv,
+		sizeof(int),
+		&output,
+		sizeof(char),
+		&returnLen,
+		NULL);
+
+	CloseHandle(hDevice);
+	return result;
 }
 
 // 读取文件
@@ -469,6 +517,8 @@ void Driver::SetProtectPid(DWORD pid)
 		NULL);
 	printf("保护进程ID:%d %d\n", pid, result);
 	LOGVARN2(32, "green b", L"保护进程:%d", pid);
+
+	CloseHandle(hDevice);
 }
 
 
@@ -501,17 +551,27 @@ void Driver::SetProtectVBoxPid(DWORD pid)
 		NULL);
 	printf("保护模拟器进程ID:%d %d\n", pid, result);
 	LOGVARN2(32, "green b", L"保护模拟器进程:%d", pid);
+
+	CloseHandle(hDevice);
 }
 
 // 设置隐藏进程ID
 void Driver::SetHidePid(DWORD pid)
 {
 	return;
+	DWORD dwWinLogonId = SGetProcessId(L"winlogon.exe");
+	if (!dwWinLogonId) {
+		dwWinLogonId = SGetProcessId(L"WINLOGON.exe");
+	}
+	if (!dwWinLogonId)
+		return;
+
 	if (m_pGame->m_Setting.NoHideProc)
 		return;
 	if (0 && pid == GetCurrentProcessId())
 		return;
 
+	wchar_t log[64];
 	HANDLE hDevice = CreateFileA("\\\\.\\CrashDumpUpload",
 		NULL,
 		NULL,
@@ -521,21 +581,59 @@ void Driver::SetHidePid(DWORD pid)
 		NULL);
 
 	if (hDevice == INVALID_HANDLE_VALUE) {
-		LOGVARN2(32, "red b", L"连接驱动失败Hide:%d", pid);
+		LOGVARP2(log, "red b", L"连接驱动失败Hide:%d", pid);
 		return;
 	}
 
+	DWORD pids[2] = { pid, dwWinLogonId };
 	char	output;
 	DWORD	returnLen;
 	BOOL result = DeviceIoControl(
 		hDevice,
 		IOCTL_SET_HIDE_PID,
-		&pid,
-		4,
+		pids,
+		sizeof(pids),
 		&output,
 		sizeof(char),
 		&returnLen,
 		NULL);
-	printf("隐藏进程ID:%d %d\n", pid, result);
-	LOGVARN2(32, "green b", L"隐藏进程:%d", pid);
+
+	printf("隐藏进程ID:%d-%d(%d)\n", pid, dwWinLogonId, result);
+	LOGVARP2(log, "green b", L"隐藏进程:%d", pid);
+
+	CloseHandle(hDevice);
+}
+
+// 删除驱动服务
+bool Driver::Delete(const wchar_t* name)
+{
+	SC_HANDLE        schManager;
+	SC_HANDLE        schService;
+	SERVICE_STATUS    svcStatus;
+
+	schManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+	if (NULL == schManager)
+		return false;
+
+	schService = OpenService(schManager, name, SERVICE_ALL_ACCESS);
+	if (NULL == schService) {
+		LOG2(L"NULL == schService", "red");
+		CloseServiceHandle(schManager);
+		return false;
+	}
+	if (!ControlService(schService, SERVICE_CONTROL_STOP, &svcStatus)) {
+		//LOG2(L"!ControlService", "red");
+		//return false;
+	}	
+
+	if (!DeleteService(schService)) {
+		LOG2(L"!DeleteServic", "red");
+		CloseServiceHandle(schService);
+		CloseServiceHandle(schManager);
+		return false;
+	}
+
+	CloseServiceHandle(schService);
+	CloseServiceHandle(schManager);
+	return true;
 }

@@ -215,7 +215,8 @@ bool Move::IsMoveEnd(_account_* account)
 	DWORD x, y;
 	m_pGame->m_pGameData->ReadCoor(&x, &y, account); // 读取当前坐标
 	//DbgPrint("IsMoveEnd %d,%d %d,%d\n", m_dwX, m_dwY, m_dwMvX, m_dwMvY);
-	return x == account->MvX && y == account->MvY;
+	// 0x168999CB
+	return x == account->MvX && y == account->MvY && (m_pGame->m_nHideFlag & 0x0000ff00) == 0x00009900;
 }
 
 // 是否移动

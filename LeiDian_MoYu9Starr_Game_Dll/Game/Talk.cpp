@@ -87,7 +87,7 @@ bool Talk::NPCTalkStatus(int index)
 bool Talk::WaitTalkOpen(int index, DWORD ms)
 {
 	if (ms == 0)
-		ms = 1500;
+		ms = 1350;
 
 	for (int i = 0; i < ms; i+=100) {
 		if (NPCTalkStatus(index))
@@ -102,7 +102,7 @@ bool Talk::WaitTalkOpen(int index, DWORD ms)
 bool Talk::WaitTalkClose(int index, DWORD ms)
 {
 	if (ms == 0)
-		ms = 1500;
+		ms = 1250;
 
 	for (int i = 0; i < ms; i += 50) {
 		if (!NPCTalkStatus(index))
@@ -247,7 +247,15 @@ void Talk::CloseSheJiaoBox(bool is_check)
 bool Talk::IsInLoginPic(HWND hwnd)
 {
 	if (!hwnd)
-		hwnd = m_pGame->m_pGameProc->m_hWndGame;
+		hwnd = m_pGame->m_pGameProc->m_pAccount->Mnq->Wnd;
+
+	// »ù´¡ÅäÖÃ¼ì²âÌáÊ¾
+	m_pGame->m_pPrintScreen->CopyScreenToBitmap(hwnd, 600, 500, 610, 510, 0, true);
+	if (m_pGame->m_pPrintScreen->ComparePixel("»ù´¡ÅäÖÃ¼ì²â", nullptr, 1) > 0) {
+		LOG2(L"¹Ø±Õ»ù´¡ÅäÖÃ¼ì²âÌáÊ¾", "c6");
+		m_pGame->m_pGameProc->Click(600, 500, 0xff, hwnd);
+		Sleep(1000);
+	}
 
 	// ÓÒ²àÕÊºÅÍ¼±ê
 	m_pGame->m_pPrintScreen->CopyScreenToBitmap(hwnd, 1205, 140, 1215, 150, 0, true);
@@ -258,7 +266,7 @@ bool Talk::IsInLoginPic(HWND hwnd)
 bool Talk::WaitForInLoginPic(HWND hwnd, DWORD ms)
 {
 	if (!hwnd)
-		hwnd = m_pGame->m_pGameProc->m_hWndGame;
+		hwnd = m_pGame->m_pGameProc->m_pAccount->Mnq->Wnd;
 	for (DWORD i = 0; i < ms; i += 100) {
 		if (IsInLoginPic(hwnd))
 			return true;

@@ -26,7 +26,8 @@ enum STEP_CODE
 	OP_MOVE,            // 移动
 	OP_MOVEFAR,         // 传送
 	OP_MOVERAND,        // 随移
-	OP_MOVENPC,          // 移至哪一个NPC
+	OP_MOVEPICKUP,      // 移动去捡物
+	OP_MOVENPC,         // 移至哪一个NPC
 	OP_NPC,             // NPC对话
 	OP_SELECT,          // 选择对话选项
 	OP_MAGIC,           // 技能
@@ -72,7 +73,7 @@ struct _npc_coor_
 		DWORD ClkX2;    // 点击X, 有则在X-X2间随机
 		DWORD ClkY2;    // 点击Y, 有则在Y-Y2间随机
 		DWORD Flag;     // 0-不参与移动随机, 1-参与移动位置随机
-	} Point[32];        // 最多支持32个位置
+	} Point[64];        // 最多支持64个位置
 	DWORD MvLength;     // 参与移动位置随机数量
 	DWORD Length;       // 所有位置数量
 };

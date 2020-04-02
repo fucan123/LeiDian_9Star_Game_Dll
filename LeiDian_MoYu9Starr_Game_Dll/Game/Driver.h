@@ -8,8 +8,11 @@
 #define IOCTL_SET_INJECT_X64DLL \
     CTL_CODE(FILE_DEVICE_UNKNOWN, 0x901, METHOD_IN_DIRECT, FILE_ANY_ACCESS)
 
-#define IOCTL_GET_THREADINFO \
-    CTL_CODE(FILE_DEVICE_UNKNOWN, 0x902, METHOD_BUFFERED, FILE_ANY_ACCESS)
+#define IOCTL_DEL_INJECT_X86DLL \
+    CTL_CODE(FILE_DEVICE_UNKNOWN, 0x902, METHOD_IN_DIRECT, FILE_ANY_ACCESS)
+
+#define IOCTL_DEL_INJECT_X64DLL \
+    CTL_CODE(FILE_DEVICE_UNKNOWN, 0x903, METHOD_IN_DIRECT, FILE_ANY_ACCESS)
 
 #define IOCTL_SET_PROTECT_PID \
     CTL_CODE(FILE_DEVICE_UNKNOWN, 0x100, METHOD_IN_DIRECT, FILE_ANY_ACCESS)
@@ -36,12 +39,16 @@ public:
 	BOOL StopFsFilter();
 	// 删除文件保护驱动
 	BOOL DeleteFsFilter();
+	// 安装驱动
+	bool InstallDriver(const char* path);
 	// 安装Dll驱动
 	bool InstallDll(const char* path);
 	// 卸载
 	bool UnStall();
 	// 设置要注入的DLL
 	bool SetDll(const char* path);
+	// 删除要注入dll
+	bool DelDll();
 	// 读取文件
 	PVOID MyReadFile(const CHAR* fileName, PULONG fileSize);
 	// 设置保护进程ID
@@ -50,6 +57,8 @@ public:
 	void SetProtectVBoxPid(DWORD pid);
 	// 设置隐藏进程ID
 	void SetHidePid(DWORD pid);
+	// 删除驱动服务
+	bool Delete(const wchar_t* name);
 public:
 	JsCall* m_pJsCall;
 	Game* m_pGame;

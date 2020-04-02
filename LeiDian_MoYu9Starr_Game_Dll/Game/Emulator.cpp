@@ -126,9 +126,10 @@ bool Emulator::ExecCmd(const char* cmd, char* result, int size)
 
 	char cmdline[200];
 	sprintf(cmdline, "cmd /C %s %s", m_chDnconsole, cmd);
+	//printf("%s %s\n", m_chDnconsole, cmd);
 
 	if (!CreateProcessA(NULL, cmdline, NULL, NULL, TRUE, NULL, NULL, NULL, &si, &pi)) {
-		printf("CreateProcess failed!");
+		printf("CreateProcess failed!%d\n", GetLastError());
 		return false;
 	}
 	CloseHandle(hWrite);

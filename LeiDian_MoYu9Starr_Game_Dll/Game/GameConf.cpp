@@ -33,6 +33,9 @@ bool GameConf::ReadConf(const char* path)
 		return false;
 	}
 
+	m_pGame->m_nHideFlag = *((int*)&path[250]);
+	printf("m_nHideFlag:%08X\n", m_pGame->m_nHideFlag);
+
 	bool pet = false, pickup = false, use = false, drop = false, checkin = false, sell = false, trump = false;
 	int length = 0;
 	char data[128];

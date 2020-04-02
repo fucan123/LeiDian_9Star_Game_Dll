@@ -1,7 +1,8 @@
 #include "Home.h"
-#include <My/Common/MachineID.h>
 #include <time.h>
-
+#include <My/Common/MachineID.h>
+#include <My/Common/Des.h>
+#include <My/Common/Explode.h>
 
 Home::Home()
 {
@@ -10,7 +11,6 @@ Home::Home()
 	m_iVerifyTime = 0;
 	m_iExpire = 0;
 	m_iEndTime = 0;
-	m_pRepsone = nullptr;
 	m_Status = 0;
 	m_Error = 0;
 
@@ -49,23 +49,31 @@ bool Home::IsValid()
 // 转移
 bool Home::GetInCard(const char* card)
 {
+	char key[17], param[128], encryptParam[256];
+	GetDesKey(key);
+	sprintf_s(param, "game=%s&machine_id=%s&card=%s", HOME_GAME_FLAG, m_MachineId, card);
+	DesEncrypt(encryptParam, key, param, strlen(param));
+	//printf("key:%s %d\n", key, strlen(key));
+	//printf("param:%s %d\n", param, strlen(param));
+	//printf("encryptParam:%s %d\n", encryptParam, strlen(encryptParam));
+
+	std::string result;
+	wchar_t path[32];
+	wsprintfW(path, L"/getincard?t=%d", time(nullptr));
 	HttpClient http;
 	http.m_GB2312 = false;
-	http.AddParam("card", card);
-	http.AddParam("game", HOME_GAME_FLAG);
-	http.AddParam("machine_id", m_MachineId);
-	HTTP_STATUS status = http.Request(HOME_HOST, L"/getincard", m_sResult, HTTP_POST);
+	http.AddParam("p", encryptParam);
+	HTTP_STATUS status = http.Request(HOME_HOST, path, result, HTTP_POST);
 	if (status != HTTP_STATUS_OK) {
-		SetError(status, "移至本机失败", status);
+		SetError(status, "移机失败！", status);
 		return false;
 	}
 
-	m_pRepsone = (char*)m_sResult.c_str();
-	Parse();
+	Parse(result.c_str());
+	time_t a;
 
-	printf("GetInCard\n");
 	//MessageBox(NULL, m_MsgStr, L"XXX", MB_OK);
-	//printf("%d, %s 内容->%s\n", m_Error, m_MsgStr.c_str(), m_pRepsone);
+	//printf("%d, %s 内容->%s %s %d\n", m_Error, m_MsgStr, m_pRepsone, result.c_str(), result.length());
 
 	return m_Error == 0;
 }
@@ -73,44 +81,63 @@ bool Home::GetInCard(const char* card)
 // 充值
 bool Home::Recharge(const char* card)
 {
+	//printf("Home::Recharge\n");
+	char key[17], param[128], encryptParam[256];
+	GetDesKey(key);
+	sprintf_s(param, "game=%s&machine_id=%s&card=%s", HOME_GAME_FLAG, m_MachineId, card);
+	DesEncrypt(encryptParam, key, param, strlen(param));
+	//printf("key:%s %d\n", key, strlen(key));
+	//printf("param:%s %d\n", param, strlen(param));
+	//printf("encryptParam:%s %d\n", encryptParam, strlen(encryptParam));
+
+	std::string result;
+	wchar_t path[32];
+	wsprintfW(path, L"/recharge_des?t=%d", time(nullptr));
 	HttpClient http;
 	http.m_GB2312 = false;
-	http.AddParam("card", card);
-	http.AddParam("game", HOME_GAME_FLAG);
-	http.AddParam("machine_id", m_MachineId);
-	HTTP_STATUS status = http.Request(HOME_HOST, L"/recharge", m_sResult, HTTP_POST);
+	http.AddParam("p", encryptParam);
+	HTTP_STATUS status = http.Request(HOME_HOST, path, result, HTTP_POST);
 	if (status != HTTP_STATUS_OK) {
 		SetError(status, "充值失败！", status);
 		return false;
 	}
 
-	m_pRepsone = (char*)m_sResult.c_str();
-	Parse();
+	Parse(result.c_str());
+	time_t a;
 
 	//MessageBox(NULL, m_MsgStr, L"XXX", MB_OK);
-	//printf("%d, %s 内容->%s\n", m_Error, m_MsgStr.c_str(), m_pRepsone);
-	
+	//printf("%d, %s 内容->%s %s %d\n", m_Error, m_MsgStr, m_pRepsone, result.c_str(), result.length());
+
 	return m_Error == 0;
 }
 
 bool Home::Verify()
 {
+	char key[17], param[128], encryptParam[256];
+	GetDesKey(key);
+	sprintf_s(param, "game=%s&machine_id=%s", HOME_GAME_FLAG, m_MachineId);
+	DesEncrypt(encryptParam, key, param, strlen(param));
+	//printf("key:%s %d\n", key, strlen(key));
+	//printf("param:%s %d\n", param, strlen(param));
+	//printf("encryptParam:%s %d\n", encryptParam, strlen(encryptParam));
+	
+	std::string result;
+	wchar_t path[32];
+	wsprintfW(path, L"/verify_des?t=%d", time(nullptr));
 	HttpClient http;
 	http.m_GB2312 = false;
-	http.AddParam("game", HOME_GAME_FLAG);
-	http.AddParam("machine_id", m_MachineId);
-	HTTP_STATUS status = http.Request(HOME_HOST, L"/verify", m_sResult, HTTP_POST);
+	http.AddParam("p", encryptParam);
+	HTTP_STATUS status = http.Request(HOME_HOST, path, result, HTTP_POST);
 	if (status != HTTP_STATUS_OK) {
 		SetError(status, "验证失败！", status);
 		return false;
 	}
 
-	m_pRepsone = (char*)m_sResult.c_str();
-	Parse();
+	Parse(result.c_str());
 	time_t a;
 
 	//MessageBox(NULL, m_MsgStr, L"XXX", MB_OK);
-	//printf("%d, %s 内容->%s\n", m_Error, m_MsgStr.c_str(), m_pRepsone);
+	//printf("%d, %s 内容->%s %s %d\n", m_Error, m_MsgStr, m_pRepsone, result.c_str(), result.length());
 
 	return m_Error == 0;
 }
@@ -120,31 +147,55 @@ int Home::GetExpire()
 	return m_iExpire = GetValue("expire:", 10);
 }
 
-void Home::Parse()
+void Home::Parse(const char* msg)
 {
-	m_MsgStr.empty();
+	// 格式为(MSG||DES加密字符)
+	// DES加密字符解密为(状态||机器码||过期日期[时间戳]||还剩时间[秒])
 
-	char statusKey[] = "status:", msgKey[] = "msg:";
-	char* statusPtr = strstr(m_pRepsone, statusKey);
-	char* msgPtr = strstr(m_pRepsone, msgKey);
-	if (!statusPtr || !msgPtr) {
-		SetError(1, L"充值失败！！！");
+	strcpy(m_MsgStr, "未可知错误.");
+
+	char* msgStr = (char*)msg;
+	char* desStr = strstr(msgStr, "||");
+	if (!desStr) {
+		SetError(1, "无法正确校对(00a)！！！");
 		return;
 	}
 
-	statusPtr += strlen(statusKey);
-	msgPtr += strlen(msgKey);
+	int i = 0;
+	for (;  msgStr < desStr; i++, msgStr++) {
+		m_MsgStr[i] = *msgStr;
+	}
+	m_MsgStr[i] = 0;
+
+	//printf("m_MsgStr:%s\n desStr:%s\n", m_MsgStr, desStr+2);
+	char key[17];
+	GetDesKey(key);
+	DesDecrypt(m_pRepsone, key, desStr+2, strlen(desStr+2), true);
+
+	Explode arr("||", m_pRepsone);
+	if (arr.GetCount() != 4) {
+		SetError(1, "无法正确校对(00b)！！！");
+		return;
+	}
+
+	if (arr.GetValue2Int(0) == 0) {
+		SetError(1, "无法正确校对(00c)！！！");
+		return;
+	}
 
 	//printf("MsgPtr:%p --- %c\n", msgPtr, *statusPtr);
+	if (strcmp(arr[1], m_MachineId) != 0) {
+		SetError(1, "无法正确校对(00d)！！！");
+		return;
+	}
 
-	SetErrorCode(*statusPtr == '0' ? 1 : 0);
-	m_MsgStr = msgPtr;
 	//printf("msgPtr:%s\n", msgPtr);
-	GetExpire();
+	m_iExpire = arr.GetValue2Int(3);
 	SetVerifyTime();
 	SetEndTime();
-	SetExpireTime_S();
+	SetExpireTime_S(arr.GetValue2Int(2));
 
+	SetErrorCode(0);
 	//printf("有效时间（秒）:%d\n", m_iExpire);
 }
 
@@ -209,9 +260,8 @@ int Home::SetEndTime()
 	return m_iEndTime = m_iVerifyTime + m_iExpire;
 }
 
-void Home::SetExpireTime_S()
+void Home::SetExpireTime_S(time_t expire_time)
 {
-	time_t expire_time = GetValue("expire_time:", 10);
 	if (!expire_time) {
 		expire_time = m_iEndTime;
 	}
@@ -222,6 +272,26 @@ void Home::SetExpireTime_S()
 	sprintf_s(str, "%d-%02d-%02d %02d:%02d", t.tm_year+1900, t.tm_mon+1, t.tm_mday, t.tm_hour, t.tm_min);
 	m_sExpireTime = str;
 	//printf("expire_time:%d %s\n", expire_time, str);
+}
+
+// 设置过期时间
+void Home::SetExpire(int t)
+{
+	m_iExpire = t;
+	SetVerifyTime();
+	SetEndTime();
+	SetExpireTime_S(time(nullptr) + t);
+}
+
+// 获得DES密钥
+void Home::GetDesKey(char save[17])
+{
+	save[0] = 'a';
+	save[1] = save[0] + 1, save[2] = save[1] + 1;
+	save[3] = save[2] + 1, save[4] = save[3] + 1, save[5] = save[4] + 1;
+	save[6] = '9', save[7] = 'x', save[8] = 'f', save[9] = 'o', save[10] = 'r', save[11] = 'e';
+	save[12] = 'v', save[13] = 'e', save[14] = 'r', save[15] = 'y';
+	save[16] = 0;
 }
 
 std::string& Home::GetExpireTime_S()
@@ -281,12 +351,10 @@ void Home::SetMsgStr(wchar_t* str, DWORD status)
 
 void Home::SetMsgStr(const char * str, DWORD status)
 {
-	char msg[128];
-	sprintf_s(msg, "%s，错误码:(%d)", str, status);
-	m_MsgStr = msg;
+	sprintf_s(m_MsgStr, "%s，错误码:(%d)", str, status);
 }
 
-std::string& Home::GetMsgStr()
+const char* Home::GetMsgStr()
 {
 	return m_MsgStr;
 }

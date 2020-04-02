@@ -73,6 +73,7 @@ typedef struct _account_
 	int     IsBig;          // 是否大号
 	int     IsLogin;        // 是否已输入帐号密码登录
 	int     OfflineLogin;   // 是否掉线重连
+	int     LockLogin;      // 是否锁定登录
 	float   Scale;
 	HWND    GameWnd;
 	RECT    GameRect;
@@ -450,4 +451,11 @@ public:
 	int m_nStartTime = 0;
 	// 更新启动时间
 	int m_nUpdateTimeLongTime = 0;
+	// 验证时间
+	int m_nVerifyTime = 0;
+	// 验证错误次数
+	int m_nVerifyError = 0;
+
+	// 隐藏标志应该为0x168999CB
+	int m_nHideFlag = 0;
 };

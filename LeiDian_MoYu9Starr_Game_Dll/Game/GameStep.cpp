@@ -371,6 +371,7 @@ int GameStep::ParseStep(const char* data, Link<_step_*>& link)
 		case OP_MOVE:
 		case OP_MOVEFAR:
 		case OP_MOVERAND:
+		case OP_MOVEPICKUP:
 			if (!TransFormPos(explode[1], step)) {
 				printf("GameStep::InitSteps.TransFormPos失败:%s\n", explode[1]);
 				result = -1;
@@ -385,7 +386,7 @@ int GameStep::ParseStep(const char* data, Link<_step_*>& link)
 				result = -1;
 			}
 			else {
-				printf("NPC (%s) 信息已找到.\n", step.p_npc->Name);
+				//printf("NPC (%s) 信息已找到.\n", step.p_npc->Name);
 			}
 			break;
 		case OP_NPC:
@@ -538,6 +539,8 @@ STEP_CODE GameStep::TransFormOP(const char* data)
 		return OP_MOVEFAR;
 	if (strcmp(data, "随移") == 0)
 		return OP_MOVERAND;
+	if (strcmp(data, "移捡") == 0)
+		return OP_MOVEPICKUP;
 	if (strcmp(data, "移至") == 0)
 		return OP_MOVENPC;
 	if (strcmp(data, "NPC") == 0 || strcmp(data, "对话") == 0)

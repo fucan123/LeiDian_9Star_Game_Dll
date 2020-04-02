@@ -210,7 +210,7 @@ void GameServer::InTeam(_account_* p, const char* data, int len)
 		return;
 
 	if (act->IsBig) { // ´óºÅÄ£ÄâÆ÷
-		Sleep(1000);
+		Sleep(1500);
 		m_pGame->m_pGameProc->InTeam(m_pGame->m_pBig);
 		CanInFB(act, nullptr, 0);
 	}
@@ -251,7 +251,7 @@ void GameServer::InFB(_account_ * p, const char * data, int len)
 	SendToOther(p->Socket, SCK_INFB, true);
 
 	if (!p->IsBig) {
-		Sleep(1000);
+		Sleep(1500);
 		m_pGame->m_pGameProc->InFB(m_pGame->m_pBig);
 	}
 }

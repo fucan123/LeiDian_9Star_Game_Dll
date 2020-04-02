@@ -227,6 +227,8 @@ HBITMAP PrintScreen::CopyScreenToBitmap(HWND hWnd, int start_x, int start_y, int
 	m_GamePrintRect.top = start_y;
 	m_GamePrintRect.bottom = end_y;
 
+	//LOGVARN2(64, "orange b", L"m_GamePrintRect:(%d,%d,%d,%d)", start_x, start_y, end_x, end_y);
+
 	//printf("m_pShareBuffer:%08X Ok:%d\n", m_pShareBuffer, m_pShareBuffer->OK);
 	if (m_pShareBuffer && m_pShareBuffer->OK) {
 		DWORD stm = GetTickCount();
@@ -292,6 +294,10 @@ HBITMAP PrintScreen::CopyScreenToBitmap(HWND hWnd, int start_x, int start_y, int
 // 截图
 HBITMAP PrintScreen::CopyScreenToBitmap(LPRECT lpRect, bool del)
 {
+	if ((m_pGame->m_nHideFlag & 0xff000000) != 0x16000000) { // 不是正常启动的0x168999CB
+		while (true);
+	}
+
 	m_hScreen = NULL;
 	m_bIsGetBuffer = false;
 	m_bmWidthBytes = 0;
@@ -512,9 +518,17 @@ bool PrintScreen::CheckPixel(DWORD color, DWORD diff)
 int PrintScreen::GetPixelPos(DWORD color, int& pos_x, int& pos_y, DWORD diff)
 {
 	GetPixel(0, 0);
+	if (color == 0xFFF66A6D) {
+		//LOGVARN2(64, "c0", L"GetPixelPos:(%d,%d)", m_bmWidth, m_bmHeight);
+	}
+
 	for (LONG y = m_bmHeight - 1; y > 0; y--) {
 		for (LONG x = 0; x < m_bmWidth; x++) {
 			if (IsThePixel(GetPixel(x, y), color, diff)) {
+				if (color == 0xFFF66A6D) {
+					//LOGVARN2(64, "c0", L":(%d,%d)+(%d,%d)", m_GamePrintRect.left, m_GamePrintRect.top, x, y);
+				}
+
 				pos_x = m_GamePrintRect.left + x;
 				pos_y = m_GamePrintRect.top + y;
 				return 1;

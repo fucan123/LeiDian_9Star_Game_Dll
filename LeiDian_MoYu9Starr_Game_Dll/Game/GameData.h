@@ -42,25 +42,28 @@ typedef struct conf_item_info
 
 typedef struct game_data_addr
 {
-	DWORD Player;  // 人物首地址
-	DWORD Name;    // 角色的名字
-	DWORD CoorX;   // X坐标
-	DWORD CoorY;   // Y坐标
-	DWORD MoveX;   // X坐标(目的地)
-	DWORD MoveY;   // Y坐标(目的地)
-	DWORD Life;    // 血量
-	DWORD LifeMax; // 血量最大值
+	DWORD Player;   // 人物首地址
+	DWORD Name;     // 角色的名字
+	DWORD CoorX;    // X坐标
+	DWORD CoorY;    // Y坐标
+	DWORD MoveX;    // X坐标(目的地)
+	DWORD MoveY;    // Y坐标(目的地)
+	DWORD Life;     // 血量
+	DWORD LifeMax;  // 血量最大值
+	DWORD PicScale; // 画面缩放数值
 } GameDataAddr;
 
 // 共享写入目的地xy地址数据
 typedef struct share_write_xy_data
 {
-	DWORD InDll;   // 是否已注入DLL
-	DWORD AddrX;   // X地址
-	DWORD AddrY;   // Y地址
-	DWORD X;       // X数值
-	DWORD Y;       // Y数值
-	DWORD Flag;    // 0-主程序写入数据 1-Dll程序写入数据
+	DWORD InDll;    // 是否已注入DLL
+	DWORD AddrX;    // X地址
+	DWORD AddrY;    // Y地址
+	DWORD AddrPic;  // 画面缩放地址
+	DWORD X;        // X数值
+	DWORD Y;        // Y数值
+	DWORD PicScale; // 画面缩放数值
+	DWORD Flag;     // 0-主程序写入数据 1-Dll程序写入数据 2-写入画面缩放数值
 } ShareWriteXYData;
 
 class Game;
@@ -84,6 +87,8 @@ public:
 
 	// 是否在神殿
 	bool IsInShenDian(_account_* account=nullptr);
+	// 是否在遗忘神域
+	bool IsInShenYu(_account_* account = nullptr);
 	// 是否在副本门口
 	bool IsInFBDoor(_account_* account=nullptr);
 
@@ -91,6 +96,8 @@ public:
 	bool FindPlayerAddr();
 	// 获取目的地坐标地址
 	bool FindMoveCoorAddr();
+	// 获取画面缩放数值地址
+	bool FindPicScale();
 
 	// 读取角色
 	bool ReadName(char* name, _account_* account=nullptr);
@@ -103,6 +110,8 @@ public:
 	void CreateShareMemory();
 	// 写入目的地
 	void WriteMoveCoor(DWORD x, DWORD y, _account_* account=nullptr);
+	// 写入画面数值
+	bool WritePicScale(DWORD v, _account_* account = nullptr);
 
 	// 搜索特征码
 	DWORD SearchCode(DWORD* codes, DWORD length, DWORD* save, DWORD save_length = 1, DWORD step = 4);

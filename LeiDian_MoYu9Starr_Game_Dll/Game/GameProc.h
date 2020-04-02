@@ -168,6 +168,10 @@ public:
 	void Click(int x, int y, int ex, int ey, int flag = 0xff, HWND hwnd=NULL);
 	// 鼠标左键点击
 	void Click(int x, int y, int flag = 0xff, HWND hwnd=NULL);
+	// 鼠标左键点击
+	void Click_Send(int x, int y, int ex, int ey, int flag = 0xff, HWND hwnd = NULL);
+	// 鼠标左键点击
+	void Click_Send(int x, int y, int flag = 0xff, HWND hwnd = NULL);
 	// 鼠标左键点击[不包括此帐号]
 	void ClickOther(int x, int y, int ex, int ey, _account_* account_no);
 	// 鼠标左键双击
@@ -197,6 +201,8 @@ public:
 	// 写入日记
 	void WriteLog(const char* log, bool flush=true);
 public:
+	// 没有通过验证
+	bool m_bNoVerify = false;
 	// 要操作的游戏窗口
 	HWND m_hWndGame;
 	// 当前操作的帐号
@@ -244,6 +250,8 @@ public:
 	bool m_bToBig = false;
 	//
 	bool m_bNeedCloseBag = false;
+	// 是否捡了最后关物品
+	bool m_bIsPickLast = false;
 
 	// 打了第几个BOSS
 	int m_nBossNum = 0;
