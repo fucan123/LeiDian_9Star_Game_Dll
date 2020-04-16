@@ -46,7 +46,7 @@ void Game::Init(HWND hWnd, const char* conf_path)
 	//m_pLogCtrl = new WebList;
 	//m_pLogCtrl->Init(m_pJsCall, "log_ul");
 
-	m_pHome = new Home;
+	m_pHome = new Home(this);
 	m_pGameConf = new GameConf(this);
 	m_pEmulator = new Emulator(this);
 	m_pMove = new Move(this);
@@ -77,6 +77,9 @@ void Game::Init(HWND hWnd, const char* conf_path)
 	// 保护当前进程
 	m_pDriver->InstallDriver(m_chPath);
 	m_pDriver->SetProtectPid(GetCurrentProcessId());
+
+	m_nVerifyNum = 0;
+	m_nVerifyTime = time(nullptr);
 }
 
 // ...
@@ -167,6 +170,7 @@ _try_fs_install_:
 			printf("在登录页面\n");
 		}
 	}
+
 	//LogOut(m_pBig);
 	//while (true) Sleep(1000);
 	//DbgPrint("!m_pGameData->WatchGame!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
@@ -422,7 +426,9 @@ bool Game::AutoLogin(const char* remark)
 		return false;
 	if (IsLogin(p) || (p->IsBig && m_Setting.LogoutByGetXL)) { // 已在登录或已登录 或大号不领项链
 		m_iLoginIndex++;
-		return AutoLogin("AutoLogin"); // 登录下一个
+		char tmp[128];
+		sprintf_s(tmp, "AutoLogin(Status:%08x,Big:%d,LogoutByGetXL:%d)", p->Status, p->IsBig, m_Setting.LogoutByGetXL);
+		return AutoLogin(tmp); // 登录下一个
 	}
 
 	p->Mnq = nullptr;
@@ -548,11 +554,14 @@ int Game::CheckLoginTimeOut()
 	if ((now_time - m_nVerifyTime) > 120) {
 		//printf("验证.\n");
 		if (!m_pHome->Verify()) {
-			if (++m_nVerifyError >= 3) {
+			if (++m_nVerifyError >= 6) {
 				m_pGame->m_pGameProc->m_bNoVerify = true;
 				m_pHome->SetExpire(0);
 				m_nVerifyError = 0;
 			}
+		}
+		else {
+			m_nVerifyError = 0;
 		}
 		m_nVerifyTime = now_time;
 	}
@@ -1261,6 +1270,9 @@ DWORD Game::ReadConf()
 	}
 	PostMessage(m_hUIWnd, MSG_CALLJS, (WPARAM)GetMyMsg(MSG_FILLTABLE), 0);
 
+	// 修改模拟器分辨率
+	m_pEmulator->SetRate(0, 1280, 720, 240);
+
 	return 0;
 }
 
@@ -1613,18 +1625,13 @@ int Game::OpenGame(int index, int close_all)
 
 // 喊话
 // 打开游戏
-void Game::CallTalk(wchar_t* text, int type)
+void Game::CallTalk(const char* text, int type)
 {
-	char* value = wchar2char(text);
-	//::printf("喊话:%hs %d\n", value, type);
-
 	m_pServer->m_Server.ClearSendString();
 	m_pServer->m_Server.SetInt(type);
-	m_pServer->m_Server.SetInt(strlen(value));
-	m_pServer->m_Server.SetContent((void*)value, strlen(value));
+	m_pServer->m_Server.SetInt(strlen(text));
+	m_pServer->m_Server.SetContent((void*)text, strlen(text));
 	m_pServer->SendToOther(0, SCK_TALK, false);
-
-	delete value;
 }
 
 // 注入DLL
@@ -1809,10 +1816,10 @@ void Game::UpdateText(const char * id, const char * text)
 // 更新
 void Game::UpdateText(const char* id, const wchar_t* text)
 {
-	my_msg* msg = GetMyMsg(MSG_SETTEXT);
-	strcpy(msg->id, id);
-	wcscpy(msg->text_w, text);
-	PostMessage(m_hUIWnd, MSG_CALLJS, (WPARAM)msg, 0);
+my_msg* msg = GetMyMsg(MSG_SETTEXT);
+strcpy(msg->id, id);
+wcscpy(msg->text_w, text);
+PostMessage(m_hUIWnd, MSG_CALLJS, (WPARAM)msg, 0);
 }
 
 // 更新状态栏文字
@@ -1892,6 +1899,51 @@ void Game::SaveScreen(const char* name)
 	HBITMAP hBitmap = m_pPrintScreen->CopyScreenToBitmap(&rect, false);
 	m_pPrintScreen->SaveBitmapToFile(hBitmap, csFile);
 	m_pPrintScreen->Release();
+}
+
+// CRC校验
+bool Game::ChCRC(bool loop)
+{
+	if (!m_pHome->IsValid()) {
+		if (++m_nCheckCRCError >= 10) {
+			while (loop);
+		}
+		//printf("ChCRC2.\n");
+		return false;
+	}
+	else {
+		int now_time = time(nullptr);
+		int start_long = now_time - m_nStartTime;
+		int need_verify_num = start_long / 160;
+#if 0
+		printf("ChCRC(%d) 验证:%d(%d/%d) %d=%d %p.\n", now_time - m_nVerifyTime, now_time - m_nStartTime, 
+			m_nVerifyNum, need_verify_num, m_nEndTime, m_pHome->m_iEndTime, &m_pHome->m_iEndTime);
+#endif
+		if (m_nVerifyNum < need_verify_num) {
+			//printf("m_nVerifyNum < need_verify_num");
+			m_pDriver->BB();
+			while (true);
+		}
+
+		if (m_nEndTime != m_pHome->m_iEndTime) {
+			//printf("m_nEndTime(%d) != m_pHome->m_iEndTime(%d) %d\n", m_nEndTime, m_pHome->m_iEndTime, m_nEndTimeError+1);
+			if (++m_nEndTimeError >= 3) {
+				m_pDriver->BB();
+				while (true);
+			}
+		}
+		else {
+			m_nEndTimeError = 0;
+		}
+
+		if ((now_time - m_nVerifyTime) > 600 && !m_pGameProc->m_bNoVerify) { // 验证时间大于10分钟
+			m_pDriver->BB();
+			while (true);
+		}
+
+		m_nCheckCRCError = 0;
+		return true;
+	}
 }
 
 // 观察是否进入游戏

@@ -497,6 +497,13 @@ int Emulator::List2(MNQ* mnq, int length)
 				m->Init = arr.GetValue2Int(4);
 				strcpy(m->Name, arr[1]);
 
+#if 0
+				RECT rect;
+				GetWindowRect(m->Wnd, &rect);
+				m->UiWidth = rect.right - rect.left;
+				m->UiHeight = rect.bottom - rect.top;
+#endif
+
 				if (!m->WndTop) {
 					//mnq[count].StartTime = 0;
 					//mnq[count].Account = nullptr;
@@ -592,12 +599,37 @@ int Emulator::GetpropCount(const char* key, int v)
 	return count;
 }
 
+// 设置分辨率
+void Emulator::SetRate(int index, int width, int height, int dpi)
+{
+	char cmd[128] = { 0 };
+	sprintf_s(cmd, "modify --index %d --resolution %d,%d,%d", index, width, height, dpi);
+	ExecCmd(cmd, nullptr, 0);
+}
+
 // 重命名
 void Emulator::ReName(const char * name, int index)
 {
 	char cmd[128] = { 0 };
 	sprintf_s(cmd, "rename --index %d --title \"%s\"", index, name);
 	ExecCmd(cmd, nullptr, 0);
+}
+
+// 重置窗口大小
+void Emulator::ReSize(HWND hwnd, int cx, int cy)
+{
+	RECT rect;
+	::GetWindowRect(hwnd, &rect);
+	if ((rect.right - rect.left) != cx) {
+		SetWindowPos(hwnd, HWND_TOP, 0, 0, cx, cy, SWP_NOZORDER | SWP_NOMOVE);
+		LOGVARN2(64, "red b", L"设置窗口分辨率为%d*%d", cx, cy);
+	}
+}
+
+// 重置游戏窗口
+void Emulator::ReGameWndSize(int index)
+{
+	ReSize(m_List[index].WndTop, 1318, 758);
 }
 
 // 点击

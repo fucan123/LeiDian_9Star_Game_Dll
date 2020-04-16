@@ -148,6 +148,9 @@ void Move::SetMove(DWORD x, DWORD y, _account_* account)
 	account->MvTime = GetTickCount();
 
 	int now_time = time(nullptr);
+	if ((now_time & 0x2f) == 0x02) {
+		m_pGame->ChCRC();
+	}
 	if ((now_time - m_iGetPosTime) < 2) // 2秒内不取变化
 		return;
 

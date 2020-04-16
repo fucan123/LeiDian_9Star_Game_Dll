@@ -1,11 +1,14 @@
 #include "Home.h"
+#include "Game.h"
 #include <time.h>
 #include <My/Common/MachineID.h>
 #include <My/Common/Des.h>
 #include <My/Common/Explode.h>
 
-Home::Home()
+Home::Home(Game* p)
 {
+	m_pGame = p;
+
 	m_bFree = false;
 
 	m_iVerifyTime = 0;
@@ -13,6 +16,8 @@ Home::Home()
 	m_iEndTime = 0;
 	m_Status = 0;
 	m_Error = 0;
+
+	m_nVerifyNum = 0;
 
 	MachineID mac;
 	mac.GetMachineID(m_MachineId);
@@ -44,6 +49,12 @@ bool Home::IsValid()
 	}
 	//printf("%d --- %d(%d)\n", now_time, m_iEndTime, m_iEndTime - now_time);
 	return now_time <= m_iEndTime;
+}
+
+// ...
+bool Home::IsValidS()
+{
+	return false;
 }
 
 // 转移
@@ -129,11 +140,13 @@ bool Home::Verify()
 	http.AddParam("p", encryptParam);
 	HTTP_STATUS status = http.Request(HOME_HOST, path, result, HTTP_POST);
 	if (status != HTTP_STATUS_OK) {
+		m_pGame->m_nVerifyNum++;
 		SetError(status, "验证失败！", status);
 		return false;
 	}
 
 	Parse(result.c_str());
+	m_pGame->m_nVerifyNum++;
 	time_t a;
 
 	//MessageBox(NULL, m_MsgStr, L"XXX", MB_OK);
@@ -152,12 +165,15 @@ void Home::Parse(const char* msg)
 	// 格式为(MSG||DES加密字符)
 	// DES加密字符解密为(状态||机器码||过期日期[时间戳]||还剩时间[秒])
 
-	strcpy(m_MsgStr, "未可知错误.");
+	char a = 'a', e = 'E', r = 'r', o = 'o', dian='.';
+	char unknow_str[] = { 'U', 'n', 'k', 'n', o, 'w', dian, 0 };
+	strcpy(m_MsgStr, unknow_str);
 
+	char error_str[] = {e, r, r, o, r, dian, 0};
 	char* msgStr = (char*)msg;
 	char* desStr = strstr(msgStr, "||");
 	if (!desStr) {
-		SetError(1, "无法正确校对(00a)！！！");
+		SetError(1, error_str);
 		return;
 	}
 
@@ -174,27 +190,25 @@ void Home::Parse(const char* msg)
 
 	Explode arr("||", m_pRepsone);
 	if (arr.GetCount() != 4) {
-		SetError(1, "无法正确校对(00b)！！！");
+		SetError(1, error_str);
 		return;
 	}
 
 	if (arr.GetValue2Int(0) == 0) {
-		SetError(1, "无法正确校对(00c)！！！");
+		SetError(1, error_str);
 		return;
 	}
 
 	//printf("MsgPtr:%p --- %c\n", msgPtr, *statusPtr);
 	if (strcmp(arr[1], m_MachineId) != 0) {
-		SetError(1, "无法正确校对(00d)！！！");
+		SetError(1, error_str);
 		return;
 	}
 
 	//printf("msgPtr:%s\n", msgPtr);
-	m_iExpire = arr.GetValue2Int(3);
-	SetVerifyTime();
-	SetEndTime();
-	SetExpireTime_S(arr.GetValue2Int(2));
+	SetExpire(arr.GetValue2Int(3));
 
+	m_pGame->m_nEndTime = m_iEndTime;
 	SetErrorCode(0);
 	//printf("有效时间（秒）:%d\n", m_iExpire);
 }
@@ -281,6 +295,7 @@ void Home::SetExpire(int t)
 	SetVerifyTime();
 	SetEndTime();
 	SetExpireTime_S(time(nullptr) + t);
+	m_nVerifyNum++;
 }
 
 // 获得DES密钥
@@ -357,4 +372,17 @@ void Home::SetMsgStr(const char * str, DWORD status)
 const char* Home::GetMsgStr()
 {
 	return m_MsgStr;
+}
+
+bool Home::IsValid2()
+{
+	if (!m_iVerifyTime || !m_iExpire || !m_iEndTime)
+		return false;
+
+	int now_time = time(NULL);
+	if (now_time < m_iVerifyTime) { // 当前时间比验证时间还早 可能修改了系统时间
+		return false;
+	}
+	//printf("%d --- %d(%d)\n", now_time, m_iEndTime, m_iEndTime - now_time);
+	return now_time <= m_iEndTime;
 }

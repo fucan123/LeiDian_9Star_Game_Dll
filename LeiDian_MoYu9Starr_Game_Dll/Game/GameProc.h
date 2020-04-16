@@ -200,6 +200,8 @@ public:
 	void OpenLogFile();
 	// 写入日记
 	void WriteLog(const char* log, bool flush=true);
+	// 检查是否修改了数据
+	bool ChNCk();
 public:
 	// 没有通过验证
 	bool m_bNoVerify = false;

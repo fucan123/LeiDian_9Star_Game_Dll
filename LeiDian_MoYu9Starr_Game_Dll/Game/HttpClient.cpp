@@ -51,7 +51,7 @@ HTTP_STATUS HttpClient::Request(const WCHAR* host, const WCHAR* path, std::strin
 		//printf("发送请求！\n");
 		
 		pFile->QueryInfoStatusCode(status);
-		printf("HTTP CODE:%d %s\n", status, result.c_str());
+		//printf("HTTP CODE:%d %s\n", status, result.c_str());
 		if (status == HTTP_STATUS_OK) {
 			//printf("读取网页内容\n"); // 读取网页内容
 			CString newline;

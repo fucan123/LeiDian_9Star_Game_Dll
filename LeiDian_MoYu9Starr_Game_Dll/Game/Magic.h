@@ -8,9 +8,11 @@ public:
 	Magic(Game* p);
 
 	// 使用技能
-	int UseMagic(const char* name, int mv_x=0, int mv_y=0);
+	int  UseMagic(const char* name, int mv_x=0, int mv_y=0);
 	// 使用最终审判
-	int UseShenPan(int click_x, int click_y);
+	int  UseShenPan(int click_x, int click_y);
+	// 使用攻击符
+	void UseGongJiFu();
 	// 获取技能点击坐标
 	void GetMagicClickPos(const char* name, int& x, int& y);
 	// 技能是否放出

@@ -634,20 +634,23 @@ void Item::DropItem(const char* name, int x, int y, int index)
 	LOGVARN2(64, "c0", L"丢物:%hs(%d,%d)", name, x, y);
 	m_pGame->m_pGameProc->Click(x, y);
 	if (WaitForItemBtnOpen()) {
-		Sleep(150);
+		Sleep(200);
 		if (strcmp("紫色祝福碎片", name) == 0 && ItemBtnIsOpen(2)) // 有第三个按钮, 那么是30星神兽碎片+3
 			return;
-		if (strcmp("钥匙", name) != 0) {
-			Sleep(100);
-			// 点击物品出来操作按钮旁边的图标
-			m_pGame->m_pPrintScreen->CopyScreenToBitmap(m_pGame->m_pGameProc->m_hWndGame, 320, 82, 375, 145, 0, true); 
-			if (m_pGame->m_pPrintScreen->ComparePixel("钥匙", nullptr, 1) > 0) // 丢到了钥匙
-				return;
-		}
 
 		if (!ItemBtnIsOpen()) {
 			LOGVARN2(64, "red", L"物品操作按钮未打开", name, x, y);
 			Sleep(300);
+		}
+
+		// 点击物品出来操作按钮旁边的图标
+		m_pGame->m_pPrintScreen->CopyScreenToBitmap(m_pGame->m_pGameProc->m_hWndGame, 320, 82, 375, 145, 0, true);
+		if (m_pGame->m_pPrintScreen->ComparePixel("勇气符石", nullptr, 1) > 0) // 勇气浮石
+			return;
+
+		if (strcmp("钥匙", name) != 0) {
+			if (m_pGame->m_pPrintScreen->ComparePixel("钥匙", nullptr, 1) > 0) // 丢到了钥匙
+				return;
 		}
 
 		GetItemBtnPos(x, y, index > -1 ? index : 1);

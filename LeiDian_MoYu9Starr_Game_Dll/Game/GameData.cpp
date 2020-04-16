@@ -40,6 +40,9 @@ void GameData::WatchGame()
 				//DbgPrint("帐号未登录:%p %d %d\n", m->Account, m->Account->IsLogin, m->Account->IsGetAddr);
 				continue;
 			}
+
+			// 调整游戏窗口
+			m_pGame->m_pEmulator->ReGameWndSize(m->Index);
 				
 			ZeroMemory(&m_DataAddr, sizeof(m_DataAddr));
 			m_hGameProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, m->VBoxPid);
@@ -196,9 +199,9 @@ bool GameData::FindPlayerAddr()
 
 	// 4:0x073B1190 4:0x0000DECE 4:0x00000000 4:0x00000001 4:0x00000000 4:0x00000030 4:0x00000000 4:0x0000DECE 4:0x00000000 4:0x00000001 4:0x00000000 4:0x00000030
 	DWORD codes[] = {
-		0x073AF2B8, 0x00000000, 0xFFFFFFFF, 0x3F800000,
-		0x00010001, 0x00000011, 0x00000011, 0x00000011,
-	};
+		0x07851B88, 0x00000000, 0xFFFFFFFF, 0x3F800000,
+		0x00010001, 0x00000000, 0x07851D14, 0x00000000,
+	}; // 073AE2C8
 	DWORD address = 0;
 	if (SearchCode(codes, sizeof(codes) / sizeof(DWORD), &address)) {
 		DWORD data = 0;
@@ -226,14 +229,14 @@ bool GameData::FindMoveCoorAddr()
 {
 	// 4:0x00000000 4:0x00000000 4:0x00000000 4:0x07328EF4 4:0x07328EF4
 	DWORD codes[] = {
-		0x073B87D8, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x07408E5C, 0x00001105, 0x00001100,
+		0x07858D68, 0x00000000, 0x00000000, 0x00000000,
+		0x00000000, 0x078D5760, 0x00001105, 0x00001100,
 	};
 	DWORD address = 0;
 	if (SearchCode(codes, sizeof(codes) / sizeof(DWORD), &address)) {
 		//LOGVARN2(32, "blue", L"目的地坐标地址:%08X %08X", address, address&0x0f);
-		if ((address & 0x0f) == 0x08) {
-			m_DataAddr.MoveX = address - 0x0C;
+		if ((address & 0x0f) == 0x0C) {
+			m_DataAddr.MoveX = address - 0x28;
 			m_DataAddr.MoveY = m_DataAddr.MoveX + 4;
 
 			LOGVARN2(32, "blue", L"目的地坐标地址:%08X", m_DataAddr.MoveX);
@@ -247,13 +250,23 @@ bool GameData::FindMoveCoorAddr()
 // 获取画面缩放数值地址
 bool GameData::FindPicScale()
 {
+	// 0x00000022, 0x00000600, 0x00000360, 0x12340000,
 	DWORD codes[] = {
 		0x00000000, 0x00000000, 0x00000000, 0x3F800000,
-		0x00000080, 0x00001234, 0x00001234, 0x00000011,
+		0x00000022, 0x00001234, 0x00001234, 0x12340000,
 	};
 	DWORD address = 0;
 	if (SearchCode(codes, sizeof(codes) / sizeof(DWORD), &address)) {
-		if ((address & 0xff) == 0x5C) {
+		DWORD data[4] = { 0 };
+		bool result = ReadProcessMemory(m_hGameProcess, LPVOID(address + 0x10), &data, sizeof(data), NULL);
+		//LOGVARN2(32, "blue", L"画面缩放地址f:%08X", address + 0x10);
+		if (0 && address > 0x4DEC9500 && address < 0x4DEC9600) {
+			printf("画面缩放地址f:%08X %d %d %d\n", address + 0x10, data[0], data[1], data[2]);
+		}
+		
+		if (data[0] >= 128 && data[0] <= 256 
+			&& data[1] > 0x100 && data[1] < 0x1000 
+			&& data[1] > 0x100 && data[1] < 0x1000) {
 			m_DataAddr.PicScale = address + 0x10;
 
 			LOGVARN2(32, "blue", L"画面缩放地址:%08X", m_DataAddr.PicScale);

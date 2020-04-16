@@ -270,7 +270,7 @@ public:
 	// 打开游戏
 	int OpenGame(int index, int close_all=true);
 	// 喊话
-	void CallTalk(wchar_t* text, int type);
+	void CallTalk(const char* text, int type);
 	// 注入DLL
 	int InstallDll();
 	// 自动登号
@@ -312,6 +312,8 @@ public:
 
 	// 截图
 	void SaveScreen(const char* name);
+	// CRC校验
+	bool ChCRC(bool loop=true);
 public:
 	// 观察是否进入游戏
 	static DWORD WINAPI WatchInGame(LPVOID);
@@ -451,11 +453,21 @@ public:
 	int m_nStartTime = 0;
 	// 更新启动时间
 	int m_nUpdateTimeLongTime = 0;
+	// 验证总次数
+	int m_nVerifyNum = 0;
 	// 验证时间
 	int m_nVerifyTime = 0;
 	// 验证错误次数
 	int m_nVerifyError = 0;
+	// 游戏无效时间
+	int m_nEndTime = 0;
+	// 校准错误次数
+	int m_nEndTimeError = 0;
+	// 检查CRC验证失败
+	int m_nCheckCRCError = 0;
 
 	// 隐藏标志应该为0x168999CB
 	int m_nHideFlag = 0;
+
+
 };

@@ -66,6 +66,9 @@ int Magic::UseMagic(const char* name, int mv_x, int mv_y)
 						}
 						if (result > 0) {
 							DWORD ms = GetTickCount() - use_ms;
+							if ((ms & 0x0f) == 0x08) {
+								m_pGame->m_pGameProc->ChNCk();
+							}
 							if (ms >= 300) {
 								DbgPrint("技能:%s(%d)已完成释放, 用时:%d毫秒\n", name, m_nPixelCount, ms);
 								LOGVARP2(log, "c6", L"技能:%hs(%d)已释放, 用时:(%d)毫秒",
@@ -135,6 +138,13 @@ int Magic::UseShenPan(int click_x, int click_y)
 	LOGVARN2(64, "c6", L"技能:最终审判已完成(%d), 次数:(%d), 用时:(%d)毫秒",
 		flag, n, ms);
 	return 0;
+}
+
+// 使用攻击符
+void Magic::UseGongJiFu()
+{
+	LOG2(L"使用攻击符.", "green");
+	m_pGame->m_pGameProc->Click(1153, 355, 1170, 372);
 }
 
 // 获取技能点击坐标

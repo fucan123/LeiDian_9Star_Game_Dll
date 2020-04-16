@@ -9,6 +9,8 @@ typedef struct mnq {
 	HWND   WndTop;    // 顶层窗口句柄
 	HWND   Wnd;       // 接受信息窗口句柄
 	int    UiPid;     // UI进程ID
+	int    UiWidth;   // UI宽度
+	int    UiHeight;  // UI高度
 	int    VBoxPid;   // 真实数据进程ID
 	int    Init;      // 模拟器是否已启动好
 	HANDLE Process;   // 权限句柄
@@ -57,8 +59,14 @@ public:
 	int  Getprop(const char* key, int index=0, int d_v=0);
 	// 获取这个属性的模拟器数量
 	int  GetpropCount(const char* key, int v);
+	// 设置分辨率
+	void SetRate(int index, int width, int height, int dpi=240);
 	// 重命名
 	void ReName(const char* name, int index=0);
+	// 重置窗口大小
+	void ReSize(HWND hwnd, int cx, int cy);
+	// 重置游戏窗口
+	void ReGameWndSize(int index=0);
 	// 点击
 	void Tap(int x, int y, int index=0);
 	// 点击

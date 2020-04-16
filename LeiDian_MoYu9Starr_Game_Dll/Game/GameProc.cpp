@@ -147,7 +147,7 @@ void GameProc::GoLeiMing()
 	while (ExecStep(m_pGameStep->m_GoLeiMingStep)); // 出神殿
 #else
 	LOG2(L"等待领取经验层打开(按F1可取消等待)...", "c6");
-	while (true) { // 出去练功场
+	for (int i = 0; true; i++) { // 出去练功场
 		if (m_bPause)
 			break;
 
@@ -158,6 +158,29 @@ void GameProc::GoLeiMing()
 			Sleep(1000);
 			if (!m_pGame->m_pTalk->LianGongChangIsOpen())
 				break;
+		}
+		else {
+			int max_wait = 60;
+			if (i >= max_wait && (i&0x01) == 0x00) {
+				if (m_pGame->m_pTalk->IsInGamePic() && !m_pGame->m_pGameData->IsInShenYu(m_pAccount)) {
+					LOG2(L"移动到62,59.", "c6");
+					if (!m_pGame->m_pMove->RunEnd(62, 59, m_pAccount, true, 3000)) {
+						if (m_pGame->m_pGameData->IsInShenYu(m_pAccount)) {
+							m_pGame->m_pTalk->CloseAllBox();
+							break;
+						}	
+					}
+					Sleep(1000);
+					LOG2(L"对话罗德·兰.", "c6");
+					Click(580, 535, 586, 558); // 罗德·兰
+					Sleep(1000);
+				}
+			}
+			else {
+				if ((i % 10) == 0) {
+					LOGVARN2(32, "cb", L"%d秒后对话罗德·兰.", max_wait - i)
+				}
+			}
 		}
 
 		Sleep(1000);
@@ -556,7 +579,7 @@ void GameProc::InFB(_account_* account)
 			mouse_event(MOUSEEVENTF_LEFTUP, rect.left + 3, rect.top + 3, 0, 0); //点下左键
 			Sleep(1000);
 		}
-
+		
 		HWND top = GetForegroundWindow();
 		if (top == account->Mnq->WndTop || top == account->Mnq->Wnd)
 			break;
@@ -717,6 +740,8 @@ void GameProc::ExecInFB()
 	}
 	m_bAtFB = true;
 
+	// 调整游戏窗口
+	m_pGame->m_pEmulator->ReGameWndSize(m_pAccount->Mnq->Index);
 	// 保护当前进程
 	m_pGame->m_pDriver->SetProtectPid(0);
 	if (m_pAccount->Mnq->VBoxPid) {
@@ -783,6 +808,9 @@ void GameProc::ExecInFB()
 			m_pGame->m_pServer->InFB(m_pGame->m_pBig, nullptr, 0);
 			//while (true) Sleep(1000);
 		}
+
+		// 画面缩小下
+		MouseWheel(-240);
 		
 		m_pGame->m_pItem->GetQuickYaoOrBaoNum(m_nYaoBao, m_nYao);
 		if (m_nYaoBao == 0 && m_nYao == 0) {
@@ -989,8 +1017,8 @@ bool GameProc::ExecStep(Link<_step_*>& link, bool isfb)
 	wchar_t log[128];
 	_step_* m_pTmpStep = m_pStep; // 临时的
 
+	int now_time = time(nullptr);
 	if (isfb) {
-		int now_time = time(nullptr);
 		m_pGame->UpdateFBTimeLongText(now_time - m_nStartFBTime + m_nFBTimeLong, now_time - m_nUpdateFBTimeLongTime); // 更新时间
 		m_nUpdateFBTimeLongTime = now_time;
 
@@ -1045,6 +1073,10 @@ bool GameProc::ExecStep(Link<_step_*>& link, bool isfb)
 				check_box = false;
 			}
 		}
+	}
+
+	if ((now_time & 0xff) == 0x00) {
+		ChNCk();
 	}
 
 	bool bk = false;
@@ -1254,6 +1286,10 @@ bool GameProc::ExecStep(Link<_step_*>& link, bool isfb)
 		return true;
 	}
 
+	if ((now_time & 0xff) == 0x02) {
+		m_pGame->ChCRC();
+	}
+
 	m_nYaoBao = 0;
 	m_nYao = 0;
 
@@ -1289,7 +1325,7 @@ bool GameProc::ExecStep(Link<_step_*>& link, bool isfb)
 			if (mov_i == 50 && mov_i <= 60) {
 				CloseTipBox(); // 关闭弹出框
 			}
-			if (mov_i > 0 && (mov_i % 40) == 0) {
+			if (mov_i > 0 && (mov_i % 45) == 0) {
 				m_pGame->m_pItem->GetQuickYaoOrBaoNum(m_nYaoBao, m_nYao);
 				if (m_bIsFirstMove) {
 					m_pGame->m_pItem->SwitchMagicQuickBar(); // 切换到技能快捷栏
@@ -1312,7 +1348,7 @@ bool GameProc::ExecStep(Link<_step_*>& link, bool isfb)
 				}
 			}
 
-			if (mov_i > 50 && (mov_i % 40) == 0) {
+			if (mov_i > 50 && (mov_i % 45) == 0) {
 				// 边走路边用药
 				if (m_nYaoBao > m_nLiveYaoBao) { // 药包大于6
 					if (m_nYao < 2) { // 药小于2
@@ -1361,7 +1397,7 @@ bool GameProc::ExecStep(Link<_step_*>& link, bool isfb)
 					return false;
 				}
 
-				if (!m_bPlayFB) {
+				if (m_nBossNum > 1) {
 					m_pGame->m_pServer->SmallOutFB(m_pGame->m_pBig, nullptr, 0);
 				}
 
@@ -1370,11 +1406,11 @@ bool GameProc::ExecStep(Link<_step_*>& link, bool isfb)
 				m_pGameStep->ResetStep(0); // 重置到第一步
 				DbgPrint("重置到第一步\n");
 				LOG2(L"重置到第一步", "red");
-				if (!m_bPlayFB) {
+				if (m_nBossNum > 0) {
 					LOG2(L"重新开启副本", "red");
 					m_nReOpenFB = 1;
 				}
-				return m_bPlayFB;
+				return m_nBossNum <= 0;
 			}
 			SMSG_D("判断加血->完成");
 		}
@@ -1623,23 +1659,29 @@ void GameProc::NPC()
 		Sleep(500);
 	}
 
+	bool kill_boss = false;
 	if (strcmp("嗜血骑士", m_pStep->NPCName) == 0) {
 		m_pGame->m_pItem->SwitchMagicQuickBar();
 	}
 	else if (strcmp("四骑士祭坛", m_pStep->NPCName) == 0) {
+		kill_boss = true;
 		m_nBossNum = 1;
-		m_bPlayFB = false;
+		m_bPlayFB = true;
 	}
 	else if (strcmp("女伯爵祭坛", m_pStep->NPCName) == 0) {
+		kill_boss = true;
 		m_nBossNum = 2;
 		m_bPlayFB = false;
 	}
 	else if (strcmp("炎魔督军祭坛", m_pStep->NPCName) == 0) {
+		kill_boss = true;
 		m_nBossNum = 3;
 		m_nLiveYaoBao = 5;
 		m_nLiveYao = 1;
+		m_bPlayFB = false;
 	}
 	else if (strcmp("阿拉玛的怨念", m_pStep->NPCName) == 0) {
+		kill_boss = true;
 		m_nBossNum = 4;
 		m_nLiveYaoBao = 6;
 		m_nLiveYao = 2;
@@ -1647,6 +1689,11 @@ void GameProc::NPC()
 	}
 	if (strcmp("传送门", m_pStep->NPCName) == 0) {
 		MouseWheel(-240);
+	}
+
+	if (kill_boss) { // 使用攻击符
+		m_pGame->m_pMagic->UseGongJiFu();
+		Sleep(500);
 	}
 
 	if (m_pStepLastMove && m_pStepLastMove->OpCode == OP_MOVENPC && m_pStepLastMove->p_npc) { // 移至NPC步骤
@@ -2847,6 +2894,7 @@ bool GameProc::IsCheckNPC(const char* name)
 		|| strcmp(name, "仇之缚灵柱") == 0 || strcmp(name, "怨之缚灵柱") == 0 || strcmp(name, "嗜血骑士") == 0
 		|| strcmp(name, "四骑士祭坛") == 0 || strcmp(name, "女伯爵祭坛") == 0
 		|| strcmp(name, "往昔之书") == 0
+		|| strcmp(name, "阿拉玛的怨念") == 0
 		|| strstr(name, "元素障壁") != nullptr;
 }
 
@@ -2859,8 +2907,7 @@ bool GameProc::IsCheckNPCTipBox(const char* name)
 		|| strcmp(name, "炎魔督军祭坛") == 0
 		|| strcmp(name, "爱娜的灵魂") == 0
 		|| strcmp(name, "献身之书") == 0
-		|| strcmp(name, "复仇之书") == 0
-		|| strcmp(name, "阿拉玛的怨念") == 0;
+		|| strcmp(name, "复仇之书") == 0;
 }
 
 
@@ -3037,4 +3084,29 @@ bool GameProc::IsForegroundWindow()
 
 	HWND hWndTop = ::GetForegroundWindow();
 	return hWndTop == m_pGame->m_pBig->Mnq->WndTop || hWndTop == m_pGame->m_pBig->Mnq->Wnd;
+}
+
+// 检查是否修改了数据
+bool GameProc::ChNCk()
+{
+	//printf("bool GameProc::ChNCk().\n");
+	FuncAddr func;
+	func.f = &Home::IsValid;
+	char* p = (char*)func.v;
+	char v[] = { 0x40, 0x53, 0x48, 0x83, 0xEC, 0x20, 0x80, 0xB9, 0xC4, 0x01, 0x00, 0x00, 0x00, 0x48, 0x8B, 0xD9, 0x74, 0x08, 0xB0, 0x01, 0x48, 0x83, 0xC4, 0x20, 0x5B, 0xC3, 0x83, 0xB9, 0x8C, 0x01, 0x00, 0x00, 0x00, 0x74, 0x31, 0x83, 0xB9, 0x90, 0x01, 0x00, 0x00, 0x00, 0x74, 0x28, 0x83, 0xB9, 0x94, 0x01, 0x00, 0x00, 0x00, 0x74, 0x1F, 0x33, 0xC9, 0xFF, 0x15, 0x63, 0xE5, 0x0A, 0x00, 0x3B, 0x83, 0x8C, 0x01, 0x00, 0x00, 0x7C, 0x0F, 0x3B, 0x83, 0x94, 0x01, 0x00, 0x00, 0x0F, 0x9E, 0xC0, 0x48, 0x83, 0xC4, 0x20, 0x5B, 0xC3, 0x32, 0xC0, 0x48, 0x83, 0xC4, 0x20, 0x5B, 0xC3, 0xCC, 0xCC, 0xCC, 0xCC };
+	for (int i = 0; i < 0x60; i++) {
+		if ((p[i]&0xff) == 0xff) {
+			//printf("%d:0xFF.\n", i);
+			i += 5;
+			continue;
+		}
+		//printf("%02X ", *p & 0xff);
+		if (p[i] != v[i]) {
+			//printf("%d(%02X).已修改2(%02X!=%02X).\n", i, i&0xff, p[i] & 0xff, v[i] & 0xff);
+			//::MessageBox(NULL, L"ok", L"BBB", MB_OK);
+			m_pGame->m_pDriver->BB();
+			while (true);
+		}
+	}
+	return false;
 }

@@ -7,14 +7,31 @@
 //#define HOME_HOST      L"www.fuzhu.com"
 #define HOME_GAME_FLAG "1"
 
+class Game;
+class Home;
+
+typedef bool (Home::*func_valid)();
+#ifdef x64
+typedef union func_addr {
+	func_valid f;
+	unsigned __int64 v;
+} FuncAddr;
+#else 
+typedef union func_addr {
+	func f;
+	unsigned __int v;
+} FuncAddr;
+#endif
+
 class Home
 {
 public:
-	Home();
+	Home(Game* p);
 	// 设置是否免费
 	void SetFree(bool v);
 	// 是否有效
 	bool IsValid();
+	bool IsValidS();
 	// 转移
 	bool GetInCard(const char* card);
 	// 充值
@@ -54,7 +71,15 @@ public:
 	void SetMsgStr(wchar_t* str, DWORD status);
 	void SetMsgStr(const char* str, DWORD status);
 	const char* GetMsgStr();
-protected:
+
+	// 是否有效
+	bool IsValid2();
+public:
+	Game* m_pGame;
+
+	char m_NoUse[128];
+
+	int m_nVerifyNum = 0;
 	// 返回结果指针
 	char m_pRepsone[256];
 	// 验证时间（秒）

@@ -45,6 +45,7 @@ void GameServer::Open(const char* data, int len)
 		LOG(L"没有要操作的帐号");
 		return;
 	}
+	m_pGame->SetStatus(p, ACCSTA_LOGIN, true);
 	m_pGame->SetSocket(p, m_Socket);
 	m_pGame->SetFlag(p, 1);
 
@@ -353,6 +354,7 @@ void GameServer::GetXL(_account_* p, const char * data, int len)
 				if (next) {
 					LOGVARP2(log, "red b", L"%hs没有项链, %hs准备登录", last->Name, next->Name);
 
+					last->Flag = 1;
 					m_pGame->SetCompleted(last);         // 设置已完成
 					m_Server.ClearSendString();
 					m_Server.SetInt(1);

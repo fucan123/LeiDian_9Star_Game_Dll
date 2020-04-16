@@ -355,14 +355,8 @@ HBITMAP PrintScreen::CopyScreenToBitmap(LPRECT lpRect, bool del)
 
 	m_hScreen = m_hBitmap;
 
-	if (0 && nWidth > 300)
-		printf("m_hScreen:%08X\n", m_hScreen);
-
-
 	if (del) {
 		GetPixel(0, 0);
-		if (0 && nWidth > 300)
-			printf("×¼±¸ÊÍ·Åm_hScreen:%08X\n", m_hScreen);
 
 		ReleaseDC(m_hDesktopWnd, m_hScrDC);
 		DeleteDC(m_hMemDC);
