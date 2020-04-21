@@ -265,8 +265,8 @@ bool GameData::FindPicScale()
 		}
 		
 		if (data[0] >= 128 && data[0] <= 256 
-			&& data[1] > 0x100 && data[1] < 0x1000 
-			&& data[1] > 0x100 && data[1] < 0x1000) {
+			&& data[1] >= 0x300 && data[1] <= 0x600 
+			&& data[2] >= 0x1B0 && data[2] <= 0x360) {
 			m_DataAddr.PicScale = address + 0x10;
 
 			LOGVARN2(32, "blue", L"»­ÃæËõ·ÅµØÖ·:%08X", m_DataAddr.PicScale);

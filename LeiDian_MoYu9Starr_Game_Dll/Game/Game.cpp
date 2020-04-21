@@ -161,6 +161,16 @@ _try_fs_install_:
 	m_pEmulator->List2();
 	m_pGameData->m_pAccoutBig = m_pBig; // 大号
 	m_pBig->IsLogin = 1;
+
+#if 0
+	::SetForegroundWindow(m_pBig->Mnq->WndTop);
+	m_pGameProc->Wait(3 * 1000);
+	m_pGameProc->SwitchGameWnd(m_pBig->Mnq->Wnd);
+	//m_pItem->SlideBag(1);
+	m_pMagic->UseCaiJue(100, 100);
+	while (true) Sleep(100);
+#endif
+	
 	//printf("m_pBig->Mnq.\n");
 	if (m_pBig->Mnq && m_pBig->Mnq->UiPid) {
 		m_pPrintScreen->InjectVBox(m_chPath, m_pBig->Mnq->UiPid);
@@ -396,13 +406,13 @@ bool Game::AutoLogin(const char* remark)
 	LOGVARP2(log, "c6", L"AutoLogin:%hs\n", remark);
 	if (m_iLoginCount == 0) { // 没有要登录的帐号
 		LOG(L"没有要登录的帐号");
-		LoginCompleted();
+		LoginCompleted("没有要登录的帐号");
 		return false;
 	}
 
 	if (m_iLoginFlag >= 0 && m_iLoginIndex != m_iLoginFlag) { // 只登一个账号
 		LOG(L"只登一个账号");
-		LoginCompleted();
+		LoginCompleted("只登一个账号");
 		return false;
 	}
 
@@ -411,7 +421,7 @@ bool Game::AutoLogin(const char* remark)
 		::printf("已登录游戏账号数量:%d\n", GetOnLineCount());
 		LOGVARP(log, L"已登录游戏账号数量:%d", GetOnLineCount());
 		//::MessageBoxA(NULL, "已全部登入游戏", "提示", MB_OK);
-		LoginCompleted();
+		LoginCompleted("已全部登入游戏");
 		return false;
 	}
 	if (login_count == 0 || (login_count == 1 && IsOnline(m_pBig))) // 没有人在线或只有大号在线
@@ -427,7 +437,7 @@ bool Game::AutoLogin(const char* remark)
 	if (IsLogin(p) || (p->IsBig && m_Setting.LogoutByGetXL)) { // 已在登录或已登录 或大号不领项链
 		m_iLoginIndex++;
 		char tmp[128];
-		sprintf_s(tmp, "AutoLogin(Status:%08x,Big:%d,LogoutByGetXL:%d)", p->Status, p->IsBig, m_Setting.LogoutByGetXL);
+		sprintf_s(tmp, "%hs(Status:%08x,Big:%d,LogoutByGetXL:%d)", p->Name, p->Status, p->IsBig, m_Setting.LogoutByGetXL);
 		return AutoLogin(tmp); // 登录下一个
 	}
 
@@ -476,12 +486,12 @@ bool Game::AutoLogin(const char* remark)
 }
 
 // 全部登完
-void Game::LoginCompleted()
+void Game::LoginCompleted(const char* remark)
 {
 	m_iLoginIndex = 0;
 	m_iLoginFlag = -2;
 	m_iLoginCount = 0;
-	LOG2(L"已全部登入游戏", "blue");
+	LOGVARN2(64, "blue", L"已全部登入游戏(%hs)", remark);
 }
 
 // 设置登号类型
@@ -539,6 +549,7 @@ int Game::CheckLoginTimeOut()
 	// 定时下线
 	if (IsInTime(m_Setting.OffLine_SH, m_Setting.OffLine_SM, m_Setting.OffLine_EH, m_Setting.OffLine_EM)) {
 		if (GetOnLineCount() > 0) {
+			m_pEmulator->Close(0);
 			m_pServer->SendToOther(0, SCK_CLOSE, true);
 			return 0;
 		}
@@ -558,6 +569,8 @@ int Game::CheckLoginTimeOut()
 				m_pGame->m_pGameProc->m_bNoVerify = true;
 				m_pHome->SetExpire(0);
 				m_nVerifyError = 0;
+
+				Alert(L"服务器验证超时！！！", 2);
 			}
 		}
 		else {
@@ -774,7 +787,7 @@ Account* Game::GetMaxXLAccount(Account** last)
 	Account* p = nullptr;
 	int value = 0;
 	for (int i = 0; i < m_AccountList.size(); i++) {
-		if (!IsLogin(m_AccountList[i])) // 没有在线
+		if (m_AccountList[i]->IsBig || !IsLogin(m_AccountList[i])) // 没有在线
 			continue;
 
 		if (i != m_iOpenFBIndex && m_AccountList[i]->XL > value) { // 上次开启的优先级排在后面
@@ -811,7 +824,7 @@ Account* Game::GetReadyAccount(bool nobig)
 // 获取下一个要登录的帐号
 Account* Game::GetNextLoginAccount()
 {
-	if (!m_Setting.AutoLoginNext)
+	if (0 && !m_Setting.AutoLoginNext)
 		return nullptr;
 
 	DbgPrint("GetAccountByStatus(ACCSTA_INIT | ACCSTA_OFFLINE)\n");
@@ -1656,13 +1669,12 @@ int Game::AutoPlay(int index, bool stop)
 		//m_pJsCall->SetBtnDisabled("start_btn", 0);
 		return 1;
 	}
-	if (!m_pDriver->m_bIsInstallDll)
+	if (!m_pDriver->m_bIsInstallDll || IsAutoLogin())
 		return 0;
 
 	SetLoginFlag(index);
 	if (!AutoLogin("AutoPlay")) {
-		SetLoginFlag(-2);
-		LOGVARN2(64, "blue", L"已全部登入游戏");
+		LoginCompleted("自动登号");
 	}
 
 	return 1;

@@ -114,6 +114,31 @@ int Magic::UseMagic(const char* name, int mv_x, int mv_y)
 	return 0;
 }
 
+// 使用诸神裁决[mv_x=鼠标移动x, mv_y鼠标移动y]
+int Magic::UseCaiJue(int mv_x, int mv_y)
+{
+	int x, y;
+	GetMagicClickPos("诸神裁决", x, y);
+
+	int mx = 0, my = 0;
+	DWORD ms = 20000;
+	m_pGame->m_pGameProc->Click_Send(x, y, 0x01);
+	Sleep(500);
+	for (DWORD i = 0; i < ms; i += 1) {
+		if (++mx > mv_x)
+			mx = mv_x;
+		if (++my > mv_y)
+			my = mv_y;
+
+		m_pGame->m_pGameProc->MouseMove(x + mx, y + my);
+		Sleep(1);
+	}
+	m_pGame->m_pGameProc->MouseMove(x, y, mv_x, mv_y);
+	m_pGame->m_pGameProc->Click_Send(x + mv_x, y + mv_y, 0x02);
+
+	return 0;
+}
+
 // 使用最终审判
 int Magic::UseShenPan(int click_x, int click_y)
 {

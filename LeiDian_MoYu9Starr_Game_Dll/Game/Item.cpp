@@ -72,9 +72,9 @@ bool Item::SlideBag(int page)
 	Sleep(1000);
 #else
 	slide_y = -487;
-	m_pGame->m_pGameProc->Click(x, y, 0x01);
+	m_pGame->m_pGameProc->Click_Send(x, y, 0x01);
 	m_pGame->m_pGameProc->MouseMove(x, y, 0, slide_y);
-	m_pGame->m_pGameProc->Click(x, y + slide_y, 0x02);
+	m_pGame->m_pGameProc->Click_Send(x, y + slide_y, 0x02);
 #endif
 	return true;
 }
@@ -104,9 +104,9 @@ bool Item::SlideStorge(int page)
 	Sleep(800);
 #else
 	slide_y = -466;
-	m_pGame->m_pGameProc->Click(x, y, 0x01);
+	m_pGame->m_pGameProc->Click_Send(x, y, 0x01);
 	m_pGame->m_pGameProc->MouseMove(x, y, 0, slide_y);
-	m_pGame->m_pGameProc->Click(x, y + slide_y, 0x02);
+	m_pGame->m_pGameProc->Click_Send(x, y + slide_y, 0x02);
 #endif
 	return true;
 }
@@ -210,7 +210,7 @@ bool Item::BagIsOpen()
 bool Item::ItemBtnIsOpen(int index)
 {
 	// 截取物品操作按钮 
-	if (index == 0)      // 第一行
+	if (1 || index == 0)      // 第一行
 		m_pGame->m_pPrintScreen->CopyScreenToBitmap(m_pGame->m_pGameProc->m_hWndGame, 145, 85, 155, 95, 0, true);
 	else if (index == 1) // 第二行
 		m_pGame->m_pPrintScreen->CopyScreenToBitmap(m_pGame->m_pGameProc->m_hWndGame, 145, 145, 155, 175, 0, true);
@@ -489,7 +489,7 @@ int Item::DropItem(ComImgIndex index, int live_count, DWORD* ms)
 			int num = m_pGame->m_pPrintScreen->ComparePixel(items[idx].Name, cp, sizeof(cp) / sizeof(ComPoint));
 			if (num == 0)
 				continue;
-			if (num == 1 && strcmp(items[idx].Name, "钥匙") == 0) // 钥匙只有一把不能丢
+			if (num < 3 && strcmp(items[idx].Name, "钥匙") == 0) // 钥匙只有一把不能丢
 				continue;
 			if (num <= 6 && strcmp(items[idx].Name, "速效治疗包") == 0)
 				continue;
@@ -634,7 +634,7 @@ void Item::DropItem(const char* name, int x, int y, int index)
 	LOGVARN2(64, "c0", L"丢物:%hs(%d,%d)", name, x, y);
 	m_pGame->m_pGameProc->Click(x, y);
 	if (WaitForItemBtnOpen()) {
-		Sleep(200);
+		Sleep(100);
 		if (strcmp("紫色祝福碎片", name) == 0 && ItemBtnIsOpen(2)) // 有第三个按钮, 那么是30星神兽碎片+3
 			return;
 
@@ -643,15 +643,36 @@ void Item::DropItem(const char* name, int x, int y, int index)
 			Sleep(300);
 		}
 
+#if 1
+		if (strcmp("钥匙", name) != 0) {
+			// 点击物品出来操作按钮旁边的图标
+			for (int n = 1; n <= 2; n++) { // 一共检查两次
+				m_pGame->m_pPrintScreen->CopyScreenToBitmap(m_pGame->m_pGameProc->m_hWndGame, 320, 82, 375, 145, 0, true);
+				if (m_pGame->m_pPrintScreen->ComparePixel("钥匙", nullptr, 1) > 0) // 丢到了钥匙
+					return;
+
+				Sleep(n < 2 ? 100 : 50);
+			}
+		}
+
 		// 点击物品出来操作按钮旁边的图标
 		m_pGame->m_pPrintScreen->CopyScreenToBitmap(m_pGame->m_pGameProc->m_hWndGame, 320, 82, 375, 145, 0, true);
 		if (m_pGame->m_pPrintScreen->ComparePixel("勇气符石", nullptr, 1) > 0) // 勇气浮石
 			return;
-
+		
+#else
+		// 点击物品出来物品名称(取钥匙字那里)
+		m_pGame->m_pPrintScreen->CopyScreenToBitmap(m_pGame->m_pGameProc->m_hWndGame, 500, 76, 510, 86, 0, true);
 		if (strcmp("钥匙", name) != 0) {
-			if (m_pGame->m_pPrintScreen->ComparePixel("钥匙", nullptr, 1) > 0) // 丢到了钥匙
+			if (m_pGame->m_pPrintScreen->ComparePixel("卡利亚堡钥匙(丢弃名称)", nullptr, 1) > 0) // 丢到了钥匙
 				return;
 		}
+
+		// 点击物品出来物品名称
+		m_pGame->m_pPrintScreen->CopyScreenToBitmap(m_pGame->m_pGameProc->m_hWndGame, 415, 76, 425, 86, 0, true);
+		if (m_pGame->m_pPrintScreen->ComparePixel("勇气符石(丢弃名称)", nullptr, 1) > 0) // 勇气浮石
+			return;
+#endif
 
 		GetItemBtnPos(x, y, index > -1 ? index : 1);
 		m_pGame->m_pGameProc->Click(x, y); // 点击丢弃按钮

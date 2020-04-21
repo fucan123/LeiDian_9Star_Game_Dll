@@ -45,6 +45,10 @@ void GameServer::Open(const char* data, int len)
 		LOG(L"没有要操作的帐号");
 		return;
 	}
+	if (m_pGame->GetOnLineCount() > 2) {
+		m_pGame->m_iSendCreateTeam = 0;
+	}
+
 	m_pGame->SetStatus(p, ACCSTA_LOGIN, true);
 	m_pGame->SetSocket(p, m_Socket);
 	m_pGame->SetFlag(p, 1);
@@ -166,7 +170,7 @@ void GameServer::InGame(_account_* p, const char* data, int len)
 	LOGVARP(log, L"%hs[%hs]已登入游戏", p->Name, p->Role);
 end:
 	if (!m_pGame->AutoLogin("GameServer::InGame")) {
-		m_pGame->LoginCompleted();
+		m_pGame->LoginCompleted("已进入游戏");
 		//m_pGame->m_pUIWnd->m_pLoginBtn->SetText("自动登号");
 		//m_pGame->m_pUIWnd->m_pStartBtn->SetEnabled(true);
 	}
@@ -271,7 +275,7 @@ void GameServer::OutFB(_account_ * p, const char * data, int len)
 	if (!m_pGame->m_pHome->IsValid()) {
 		SendToOther(0, SCK_EXPIRE_OUT, true);
 		LOGVARP2(log, "red", L"卡号已过期, 请激活.");
-		::MessageBoxA(NULL, "卡号已过期, 请激活.", "提示", MB_OK);
+		m_pGame->Alert(L"卡号已过期, 请激活.", 2);
 	}
 }
 
@@ -336,12 +340,21 @@ void GameServer::GetXL(_account_* p, const char * data, int len)
 			big_in = stLocal.wHour == 23 ? stLocal.wMinute < 59 : true; // 至少需要1分钟
 		}
 		if (big_in) {
-			LOGVARP2(log, "blue b", L"由[大号]开启副本(%d)\n", m_iRecvXL);
-			for (int xxx = 0; xxx < 45; xxx++) {
-				//Sleep(1000);
+			Account* last = nullptr;
+			Account* act = m_pGame->GetMaxXLAccount(&last);
+			if (!act) {
+				LOGVARP2(log, "blue b", L"小号没有钥匙, 由[大号]开启副本(%d)\n", m_iRecvXL);
+
+				m_pGame->SetStatus(m_pGame->GetBigAccount(), ACCSTA_OPENFB, true);
+				m_pGame->m_pGameProc->OpenFB();
+			}
+			else {
+				LOGVARP(log, L"由%hs[%hs]用钥匙开启副本(发送)", act->Name, act->Role);
+
+				m_pGame->SetStatus(act, ACCSTA_OPENFB, true);
+				Send(act->Socket, SCK_OPENFB, true);
 			}
 			
-			m_pGame->m_pGameProc->OpenFB();
 			//InFB(m_pGame->m_pBig, nullptr, 0);
 			return;
 		}
@@ -354,6 +367,8 @@ void GameServer::GetXL(_account_* p, const char * data, int len)
 				if (next) {
 					LOGVARP2(log, "red b", L"%hs没有项链, %hs准备登录", last->Name, next->Name);
 
+					m_pGame->m_iSendCreateTeam = 0;
+
 					last->Flag = 1;
 					m_pGame->SetCompleted(last);         // 设置已完成
 					m_Server.ClearSendString();
@@ -362,6 +377,7 @@ void GameServer::GetXL(_account_* p, const char * data, int len)
 				}
 				else {
 					LOG2(L"已经没有其它号了,无法进入\n", "red b");
+					m_pGame->Alert(L"已经没有其它号了,无法进入", 2);
 					m_pGame->AutoShutDown();
 				}
 			}
@@ -423,7 +439,7 @@ void GameServer::AskXLCount(const char* msg)
 	wchar_t log[64];
 	if (!m_pGame->m_pHome->IsValid()) {
 		LOGVARP2(log, "red", L"卡号已过期, 请激活");
-		//m_pJsCall->ShowMsg("卡号已过期, 请先激活.", "提示", 2);
+		m_pGame->Alert(L"卡号已过期, 请激活.", 2);
 		return;
 	}
 	m_iOutFBCount = 0;
@@ -577,8 +593,8 @@ void GameServer::OnClose(SOCKET client, int index)
 	if (!p)
 		p = self->m_pGame->GetReadyAccount();
 	if (p) {
-		p->PlayTime = 0;
 		if (!self->m_pGame->CheckStatus(p, ACCSTA_COMPLETED)) {
+			p->PlayTime = 0;
 			self->m_pGame->SetStatus(p, ACCSTA_OFFLINE);
 			self->m_pGame->UpdateAccountStatus(p);
 		}
@@ -612,6 +628,7 @@ void GameServer::OnClose(SOCKET client, int index)
 			Account* next = self->m_pGame->GetNextLoginAccount();
 			if (next) { // 自动登录下一个号
 				printf("下一个要登录的帐号:%hs:%d %08X\n", next->Name, next->Index, next->Status);
+				LOGVARP2(log, "blue", L"下一个要登录的帐号:%hs(%d) %08X\n", next->Name, next->Index, next->Status);
 				self->m_pGame->SetLoginFlag(next->Index);
 				self->m_pGame->AutoLogin("GameServer::OnClose:下一个");
 			}

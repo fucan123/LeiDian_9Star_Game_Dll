@@ -141,7 +141,7 @@ public:
 	// 自动登号
 	bool AutoLogin(const char* remark);
 	// 全部登完
-	void LoginCompleted();
+	void LoginCompleted(const char* remark);
 	// 设置登号类型
 	void SetLoginFlag(int flag);
 	// 获取需要登录的数量

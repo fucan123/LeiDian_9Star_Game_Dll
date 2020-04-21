@@ -9,6 +9,8 @@ public:
 
 	// 使用技能
 	int  UseMagic(const char* name, int mv_x=0, int mv_y=0);
+	// 使用诸神裁决[mv_x=鼠标移动x, mv_y鼠标移动y]
+	int  UseCaiJue(int mv_x, int mv_y);
 	// 使用最终审判
 	int  UseShenPan(int click_x, int click_y);
 	// 使用攻击符

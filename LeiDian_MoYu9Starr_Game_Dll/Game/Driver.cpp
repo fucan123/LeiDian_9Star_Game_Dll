@@ -261,7 +261,6 @@ bool Driver::InstallDriver(const char* path)
 		return false;
 	}
 
-
 	bool is_try = false;
 _try_install_:
 	if (m_SysDll.Install(L"firenet_safe", L"safe fire", file)) {
@@ -400,16 +399,36 @@ bool Driver::SetDll(const char* path)
 		&returnLen,
 		NULL);
 
-	if (dllx86Ptr)
-	{
-		free(dllx86Ptr);
-	}
 	if (result) {
-		LOG2(L"设置dll成功", "green");
+		LOG2(L"设置dll成功.", "green");
 	}
 	else {
 		//LOGVARN2(32, "red", L"GetLastError:%d.\n", GetLastError());
-		LOG2(L"设置dll失败", "red");
+		LOG2(L"设置dll失败，自动重试.", "red");
+		if (DelDll()) {
+			LOG2(L"删除dll成功", "green");
+			
+			result = DeviceIoControl(
+				hDevice,
+				IOCTL_SET_INJECT_X86DLL,
+				dllx86Ptr,
+				dllx86Size,
+				&output,
+				sizeof(char),
+				&returnLen,
+				NULL);
+
+			if (result) {
+				LOG2(L"设置dll成功.", "green");
+			}
+			else {
+				LOG2(L"设置dll失败, 请手动重试.", "red");
+			}
+		}
+	}
+
+	if (dllx86Ptr) {
+		free(dllx86Ptr);
 	}
 
 	if (hDevice != NULL) {

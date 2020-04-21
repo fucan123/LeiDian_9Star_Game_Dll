@@ -2921,22 +2921,26 @@ void GameProc::MouseMove(int x, int y, int rx, int ry, HWND hwnd)
 		if (i > dx && i > dy)
 			break;
 
-		int mv_x = 0, mv_y = 0;
-		if (i < dx) {
-			mv_x = rx > 0 ? i : -i;
-		}
-		else {
-			mv_x = rx;
-		}
-		if (i < dy) {
-			mv_y = ry > 0 ? i : -i;
-		}
-		else {
-			mv_y = ry;
-		}
+		int nx = MyRand(2, 3), ny = MyRand(2, 3);
 
 		Sleep(MyRand(1, 2));
-		MouseMove(x + mv_x, y + mv_y, hwnd);
+		for (int j = 0; j < 1; j++) {
+			int mv_x = 0, mv_y = 0;
+			if (i < dx) {
+				mv_x = rx > 0 ? i : -i;
+			}
+			else {
+				mv_x = rx;
+			}
+			if (i < dy) {
+				mv_y = ry > 0 ? i : -i;
+			}
+			else {
+				mv_y = ry;
+			}
+			MouseMove(x + mv_x, y + mv_y, hwnd);
+		}
+		
 
 		//DbgPrint("MouseMove:%d,%d\n", x + mv_x, y + mv_y);
 		//LOGVARN2(64, "c0 b", L"MouseMove:%d,%d\n", x + mv_x, y + mv_y);
