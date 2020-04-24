@@ -160,7 +160,7 @@ void GameProc::GoLeiMing()
 				break;
 		}
 		else {
-			int max_wait = 60;
+			int max_wait = 50;
 			if (i >= max_wait && (i&0x01) == 0x00) {
 				if (m_pGame->m_pTalk->IsInGamePic() && !m_pGame->m_pGameData->IsInShenYu(m_pAccount)) {
 					LOG2(L"移动到62,59.", "c6");
@@ -1437,6 +1437,19 @@ bool GameProc::ExecStep(Link<_step_*>& link, bool isfb)
 			}
 		}
 
+		if (m_nReMoveCount > 5) {
+			Sleep(100);
+			if  (m_nReMoveCount > 8 && (m_stLast.OpCode == OP_NPC || m_stLast.OpCode == OP_SELECT)) {
+				if (m_pGame->m_pTalk->TalkBtnIsOpen()) {
+					NPCLast(1);
+					m_pGame->m_pTalk->WaitTalkOpen(0x00);
+					Sleep(1000);
+					m_pGame->m_pTalk->Select(0x00);
+					Sleep(500);
+				}
+			}
+		}
+
 		if (m_nReMoveCount != m_nReMoveCountLast && m_nReMoveCount >= 15 && m_nReMoveCount < 18) {
 			m_pGame->m_pMagic->UseMagic("诸神裁决");
 		}
@@ -2033,7 +2046,7 @@ void GameProc::Select()
 			goto _check_;
 		}
 
-		Sleep(MyRand(30, 50, i));
+		Sleep(MyRand(100, 150, i));
 
 		DbgPrint("第(%d)次选择 选项:%d\n", i, m_pStep->SelectNo);
 		LOGVARP2(log, "c6", L"第(%d)次选择 选项:%d", i, m_pStep->SelectNo);
@@ -3012,7 +3025,7 @@ void GameProc::Click(int x, int y, int flag, HWND hwnd)
 // 鼠标左键点击
 void GameProc::Click_Send(int x, int y, int ex, int ey, int flag, HWND hwnd)
 {
-	Click(MyRand(x, ex), MyRand(y, ey), flag, hwnd);
+	Click_Send(MyRand(x, ex), MyRand(y, ey), flag, hwnd);
 }
 
 // 鼠标左键点击

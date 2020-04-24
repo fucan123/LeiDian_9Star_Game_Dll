@@ -264,13 +264,13 @@ bool Driver::InstallDriver(const char* path)
 	bool is_try = false;
 _try_install_:
 	if (m_SysDll.Install(L"firenet_safe", L"safe fire", file)) {
-		LOG2(L"安装驱动成功", "green");
+		LOG2(L"Install Driver Ok.", "green b");
 		return true;
 	}
 	else {
 		if (!is_try) {
 			is_try = true;
-			LOG2(L"安装驱动失败, 准备重新尝试.", "red");
+			LOG2(L"Install Driver Failed, Try Agin.", "red");
 #if 1
 			system("sc stop firenet_safe");
 			system("sc delete firenet_safe");
@@ -535,7 +535,7 @@ void Driver::SetProtectPid(DWORD pid)
 		&returnLen,
 		NULL);
 	printf("保护进程ID:%d %d\n", pid, result);
-	LOGVARN2(32, "green b", L"保护进程:%d", pid);
+	LOGVARN2(32, "green b", L"Protect Process:%d", pid);
 
 	CloseHandle(hDevice);
 }
@@ -569,7 +569,7 @@ void Driver::SetProtectVBoxPid(DWORD pid)
 		&returnLen,
 		NULL);
 	printf("保护模拟器进程ID:%d %d\n", pid, result);
-	LOGVARN2(32, "green b", L"保护模拟器进程:%d", pid);
+	LOGVARN2(32, "green b", L"Protect VBox:%d", pid);
 
 	CloseHandle(hDevice);
 }

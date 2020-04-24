@@ -131,14 +131,14 @@ void Game::Run()
 	bool try_fs = true;
 _try_fs_install_:
 	if (m_pDriver->InstallFsFilter(m_chPath, "FsFilter.sys", "370030")) {
-		LOG2(L"安装文件保护驱动成功.", "green b");
+		LOG2(L"Install Protect Ok.", "green b");
 		if (m_pDriver->StartFsFilter()) {
-			LOG2(L"启动文件保护驱动成功.", "green b");
+			LOG2(L"Start Protect Ok.", "green b");
 		}
 		else {
 			if (try_fs) {
 				try_fs = false;
-				LOG2(L"启动文件保护驱动失败, 准备重试.", "red b");
+				LOG2(L"Start Protect Failed, Try Agin.", "red b");
 #if 0
 				system("sc stop DriverFs999");
 				system("sc delete DriverFs999");
@@ -148,13 +148,13 @@ _try_fs_install_:
 				goto _try_fs_install_;
 			}
 			else {
-				LOG2(L"启动文件保护驱动失败, 请重启本程序再尝试.", "red b");
-				Alert(L"启动文件保护失败, 请重启本程序再尝试.", 2);
+				LOG2(L"Start Protect Failed, 请重启本程序再尝试.", "red b");
+				Alert(L"Start Protect Failed, 请重启本程序再尝试.", 2);
 			}
 		}
 	}
 	else {
-		LOG2(L"安装文件保护驱动失败.", "red b");
+		LOG2(L"Install Protect Faild.", "red b");
 	}
 
 	//printf("!m_pEmulator->List2!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");

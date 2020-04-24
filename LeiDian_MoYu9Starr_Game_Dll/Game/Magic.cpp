@@ -152,7 +152,7 @@ int Magic::UseShenPan(int click_x, int click_y)
 			flag = 1;
 			break;
 		}
-		if ((now_ms - start_ms) >= 400) {
+		if ((now_ms - start_ms) >= 500) {
 			flag = 2;
 			break;
 		}
