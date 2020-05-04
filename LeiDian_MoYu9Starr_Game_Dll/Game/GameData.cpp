@@ -199,8 +199,8 @@ bool GameData::FindPlayerAddr()
 
 	// 4:0x073B1190 4:0x0000DECE 4:0x00000000 4:0x00000001 4:0x00000000 4:0x00000030 4:0x00000000 4:0x0000DECE 4:0x00000000 4:0x00000001 4:0x00000000 4:0x00000030
 	DWORD codes[] = {
-		0x07862808, 0x00000000, 0xFFFFFFFF, 0x3F800000,
-		0x00010001, 0x00000000, 0x07862994, 0x00000000,
+		0x078BAB68, 0x00000000, 0xFFFFFFFF, 0x3F800000,
+		0x00010001, 0x00000000, 0x078BACF4, 0x00000000,
 	}; // 073AE2C8
 	DWORD address = 0;
 	if (SearchCode(codes, sizeof(codes) / sizeof(DWORD), &address)) {
@@ -229,14 +229,14 @@ bool GameData::FindMoveCoorAddr()
 {
 	// 4:0x00000000 4:0x00000000 4:0x00000000 4:0x07328EF4 4:0x07328EF4
 	DWORD codes[] = {
-		0x07869A88, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x078E6674, 0x00001105, 0x00001100,
+		0x078C1E48, 0x00000000, 0x00000000, 0x00000000,
+		0x00000000, 0x07941AD8, 0x00001105, 0x00001100,
 	};
 	DWORD address = 0;
 	if (SearchCode(codes, sizeof(codes) / sizeof(DWORD), &address)) {
 		//LOGVARN2(32, "blue", L"目的地坐标地址:%08X %08X", address, address&0x0f);
-		if ((address & 0x0f) == 0x00) {
-			m_DataAddr.MoveX = address - 0x24;
+		if ((address & 0x0f) == 0x04) {
+			m_DataAddr.MoveX = address - 0x30;
 			m_DataAddr.MoveY = m_DataAddr.MoveX + 4;
 
 			LOGVARN2(32, "blue", L"目的地坐标地址:%08X", m_DataAddr.MoveX);
@@ -405,13 +405,13 @@ void GameData::WriteMoveCoor(DWORD x, DWORD y, _account_* account)
 		m_pShareBuffer->Flag = 1; // Dll写入
 
 		DbgPrint("等待写入完成...\n");
-		LOGVARP2(log, "c6", L"等待写入完成...");
+		//LOGVARP2(log, "c6", L"等待写入完成...");
 		while (m_pShareBuffer->Flag == 1) { // 等待Dll写入完成
 			//printf("m_pShareBuffer->Flag:%d\n", m_pShareBuffer->Flag);
 			Sleep(10);
 		}
 		DbgPrint("已经完成写入!!!\n");
-		LOGVARP2(log, "c6", L"已经完成写入!!!");
+		//LOGVARP2(log, "c6", L"已经完成写入!!!");
 	}
 }
 

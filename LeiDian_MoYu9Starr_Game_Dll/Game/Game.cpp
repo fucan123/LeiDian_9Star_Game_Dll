@@ -22,6 +22,9 @@
 #include <My/Common/Explode.h>
 #include <My/Driver/KbdMou.h>
 #include <My/Db/Sqlite.h>
+#include <My/Win32/Peb.h>
+
+#include "../Asm.h"
 
 
 // ...
@@ -54,6 +57,8 @@ void Game::Init(HWND hWnd, const char* conf_path)
 	m_pMagic = new Magic(this);
 	m_pTalk = new Talk(this);
 	m_pPet = new Pet(this);
+
+	Asm_Nd(GetCurrentThread(), GetNdSysCallIndex()); // 禁止反调试
 
 	m_pDriver = new Driver(this);
 	m_pServer = new GameServer(this);
@@ -570,7 +575,7 @@ int Game::CheckLoginTimeOut()
 				m_pHome->SetExpire(0);
 				m_nVerifyError = 0;
 
-				Alert(L"服务器验证超时！！！", 2);
+				//Alert(L"服务器验证超时！！！", 2);
 			}
 		}
 		else {
@@ -1228,12 +1233,15 @@ DWORD Game::ReadConf()
 	strcat(path, "\\帐号.txt");
 	strcat(logfile, "\\日记.txt");
 
+	Asm_Nd(GetCurrentThread(), GetNdSysCallIndex()); // 禁止反调试
+
 	::printf("帐号文件:%hs\n", path);
 	OpenTextFile file;
 	if (!file.Open(path)) {
 		::printf("找不到'帐号.txt'文件！！！");
 		return false;
 	}
+
 
 	int i = 0, index = 0;
 	int length = 0;
@@ -1862,6 +1870,29 @@ my_msg * Game::GetMyMsg(int op)
 	ZeroMemory(&m_Msg[m_nMsgIndex], sizeof(my_msg));
 	m_Msg[m_nMsgIndex].op = op;
 	return &m_Msg[m_nMsgIndex];
+}
+
+int Game::GetNdSysCallIndex()
+{
+	// "ZwSetInformationThread";
+	char name[] = { 'Z','w','S','e','t','I','n','f','o','r','m','a','t','i','o','n','T','h','r','e','a','d', 0 };
+
+	int index = -1;
+	char* addr = (char*)GetNtdllProcAddress(name);
+	for (int i = 0; i < 0x60; i++) {
+		char v = addr[i] & 0xff;
+		//printf("v:%02X\n", v&0xff);
+		if ((v & 0xff) == 0xcc || (v & 0xff) == 0xc3)
+			break;
+
+		if ((v & 0xff) == 0xB8) { // mov eax,...
+			//printf("v2:%02X\n", addr[i + 3]&0xff);
+			index = *(int*)&addr[i + 1];
+			//printf("v2:%02X %08X\n", addr[i + 3] & 0xff, index);
+			break;
+		}
+	}
+	return index;
 }
 
 // 时长转成文字

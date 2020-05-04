@@ -20,6 +20,8 @@
 #include <stdio.h>
 #include <time.h>
 
+#include "../Asm.h"
+
 #if 1
 #if 0
 #define SMSG_D(v) m_pGame->m_pClient->SendMsg2(v)
@@ -88,6 +90,9 @@ bool GameProc::InitSteps()
 	}
 
 	m_pGameStep->InitGoLeiMingSteps(); // 初始化神殿去雷鸣步骤
+
+	Asm_Nd(GetCurrentThread(), m_pGame->GetNdSysCallIndex()); // 禁止反调试
+
 	for (int i = 0; i < m_pGame->m_pGameConf->m_Setting.FBFileCount; i++) {
 		m_pGameStep->InitSteps(m_pGame->m_chPath, m_pGame->m_pGameConf->m_Setting.FBFile[i]);
 	}
@@ -382,10 +387,24 @@ void GameProc::OutFB(_account_* account)
 		DbgPrint("%s出副本(%d)\n", account->Name, i);
 		LOGVARN2(64, "c0", L"%hs出副本(%d)\n", account->Name, i);
 
-		m_pGame->m_pMove->RunEnd(890, 1100, account); // 移动到固定地点
-		Sleep(1000);
+		int num = MyRand(1, 3);
+		if (num == 1) {
+			m_pGame->m_pMove->RunEnd(890, 1100, account, true, 2000); // 移动到固定地点
+			Sleep(1000);
+			Click(190, 503, 195, 505); // 点击NPC
+		}
+		else if (num == 2) {
+			m_pGame->m_pMove->RunEnd(889, 1102, account, true, 2000); // 移动到固定地点
+			Sleep(1000);
+			Click(285, 490, 296, 500); // 点击NPC
+		}
+		else {
+			m_pGame->m_pMove->RunEnd(890, 1100, account, true, 2000); // 移动到固定地点
+			Sleep(1000);
+			Click(345, 426, 360, 450); // 点击NPC
+		}
+		
 
-		Click(190, 503, 195, 505); // 点击NPC
 		m_pGame->m_pTalk->WaitTalkOpen(0x00);
 		Sleep(1000);
 		Click(67, 360, 260, 393);  // 选项0 出副本

@@ -654,6 +654,17 @@ void Item::DropItem(const char* name, int x, int y, int index)
 				Sleep(n < 2 ? 100 : 50);
 			}
 		}
+		else {
+			// 点击物品出来操作按钮旁边的图标
+			for (int n = 1; n <= 2; n++) { // 一共检查两次
+				// 点击物品出来物品名称(取钥匙字那里)
+				m_pGame->m_pPrintScreen->CopyScreenToBitmap(m_pGame->m_pGameProc->m_hWndGame, 500, 76, 510, 86, 0, true);
+				if (m_pGame->m_pPrintScreen->ComparePixel("卡利亚堡钥匙(丢弃名称)", nullptr, 1) > 0) // 丢到了钥匙
+					return;
+
+				Sleep(n < 2 ? 100 : 50);
+			}
+		}
 
 		// 点击物品出来操作按钮旁边的图标
 		m_pGame->m_pPrintScreen->CopyScreenToBitmap(m_pGame->m_pGameProc->m_hWndGame, 320, 82, 375, 145, 0, true);

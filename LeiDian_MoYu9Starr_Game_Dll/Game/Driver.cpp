@@ -28,7 +28,7 @@ BOOL Driver::InstallFsFilter(const char* path, const char * lpszDriverPath, cons
 	//GetFullPathNameA(lpszDriverPath, MAX_PATH, szDriverImagePath, NULL);
 
 	sprintf_s(szDriverImagePath, "%s\\files\\%s", path, lpszDriverPath);
-	printf("szDriverImagePath:%s\n", szDriverImagePath);
+	//printf("szDriverImagePath:%s\n", szDriverImagePath);
 
 	SC_HANDLE hServiceMgr = NULL;// SCM管理器的句柄
 	SC_HANDLE hService = NULL;// NT驱动程序的服务句柄
@@ -373,13 +373,17 @@ bool Driver::SetDll(const char* path)
 		sizeof(char),
 		&returnLen,
 		NULL);
-	printf("保护进程ID:%d %d\n", pid, result);
+	//printf("保护进程ID:%d %d\n", pid, result);
 
 	// 设置隐藏进程
 	SetHidePid(pid);
 
 	char file[255];
 	sprintf_s(file, "%s\\files\\9Star.dll", path);
+#if 0
+	strcpy(file, "C:\\Users\\fucan\\Desktop\\MNQ-9Star\\vs\\9Star.dll");
+	printf("%s\n", file);
+#endif
 	dllx86Ptr = MyReadFile(file, &dllx86Size);
 	if (dllx86Ptr == NULL) {
 		LOG2(L"找不到文件9Star.dll", "red");

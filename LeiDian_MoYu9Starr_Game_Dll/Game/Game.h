@@ -45,6 +45,7 @@
 #define MSG_ALERT         6
 #define MSG_UPSTATUSTEXT  100
 #define MSG_UPVER_OK      101
+#define MSG_UPSTEP_OK     102
 #define MSG_VERIFY_OK     200
 
 struct my_msg {
@@ -304,6 +305,8 @@ public:
 	void Alert(const wchar_t* text, int icon);
 	// 获取msg指针
 	my_msg* GetMyMsg(int op);
+
+	int    GetNdSysCallIndex();
 
 	// 时长转成文字
 	void FormatTimeLong(char* text, int time_long);

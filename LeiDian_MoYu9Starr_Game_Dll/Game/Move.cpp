@@ -60,8 +60,12 @@ int Move::Run(DWORD x, DWORD y, _account_* account, DWORD click_x, DWORD click_y
 	}
 		
 	if (!IsOpenMap()) {
-		OpenMap(account);
-		Sleep(100);
+		for (int i = 0; i < 2; i++) {
+			if (OpenMap(account)) {
+				break;
+			}
+		}
+		Sleep(60);
 	}
 
 	if (is_click) {
@@ -88,7 +92,7 @@ int Move::Run(DWORD x, DWORD y, _account_* account, DWORD click_x, DWORD click_y
 }
 
 // 打开游戏地图
-void Move::OpenMap(_account_* account)
+bool Move::OpenMap(_account_* account)
 {
 	// 1120,66-1220-125
 	DbgPrint("打开地图\n");
@@ -96,8 +100,7 @@ void Move::OpenMap(_account_* account)
 	//m_pGame->m_pEmulator->Tap(MyRand(1108, 1168), MyRand(55, 135));
 	m_pGame->m_pGameProc->Click(1108, 55, 1168, 135, 0xff, account->Mnq->Wnd);
 	Sleep(100);
-	WaitMapOpen();
-	// 580,375 794,769
+	return WaitMapOpen();
 }
 
 // 关闭游戏地图
@@ -116,17 +119,19 @@ bool Move::IsOpenMap()
 }
 
 // 等待地图打开
-void Move::WaitMapOpen(DWORD ms)
+bool Move::WaitMapOpen(DWORD ms)
 {
 	DWORD _tm = GetTickCount();
 	// 截取地图自动寻路确定按钮图片
 	
 	while (!IsOpenMap()) {
 		if ((GetTickCount() - _tm) >= ms)
-			break;
+			return false;
 
-		Sleep(100);
+		Sleep(10);
 	}
+
+	return true;
 }
 
 // 点击自动寻路

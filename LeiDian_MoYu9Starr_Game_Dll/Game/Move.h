@@ -16,13 +16,13 @@ public:
 	// 移动
 	int  Run(DWORD x, DWORD y, _account_* account, DWORD click_x, DWORD click_y, bool is_click=false, bool rand_click=false);
 	// 打开游戏地图
-	void OpenMap(_account_* account);
+	bool OpenMap(_account_* account);
 	// 关闭游戏地图
 	void CloseMap(HWND hwnd=NULL);
 	// 地图是否打开
 	bool IsOpenMap();
 	// 等待地图打开
-	void WaitMapOpen(DWORD ms=1500);
+	bool WaitMapOpen(DWORD ms=1250);
 	// 点击自动寻路
     void GoWay();
 	// 设置移动位置

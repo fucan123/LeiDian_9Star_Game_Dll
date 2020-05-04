@@ -11,6 +11,8 @@
 #include <My/Win32/PE.h>
 #include <My/Win32/Peb.h>
 
+#include "Asm.h"
+
 typedef struct export_dll_func
 {
 	PVOID IsVaid;         // 0
@@ -38,6 +40,7 @@ DLLEXPORT void WINAPI Game_Init(HWND hWnd, const char* conf_path)
 #if 0
 	AllocConsole();
 	freopen("CON", "w", stdout);
+
 #endif
 #if 1
 	pfnNtQuerySetInformationThread f = (pfnNtQuerySetInformationThread)GetNtdllProcAddress("ZwSetInformationThread");
@@ -63,7 +66,7 @@ DLLEXPORT void WINAPI Game_Init(HWND hWnd, const char* conf_path)
 	p->SelectFBRecord = Game_SelectFBRecord;
 	p->VerifyCard = Game_VerifyCard;
 
-	printf("Game_Init\n");
+	DbgPrint("Game_Init\n");
 	game.Init(hWnd, conf_path);
 	//::MessageBox(NULL, "OK", "bbb", MB_OK);
 

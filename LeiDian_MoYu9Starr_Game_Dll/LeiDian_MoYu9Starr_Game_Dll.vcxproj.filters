@@ -16,6 +16,9 @@
     <Filter Include="Game">
       <UniqueIdentifier>{c720cbab-fce1-40cd-957b-370a36973858}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Asm">
+      <UniqueIdentifier>{a0536d78-4b73-4d11-b7c8-7b5ba0eb7e6a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -83,6 +86,9 @@
     </ClInclude>
     <ClInclude Include="h.h">
       <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Asm.h">
+      <Filter>Asm</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -152,5 +158,10 @@
     <ClCompile Include="h.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="Asm.asm">
+      <Filter>Asm</Filter>
+    </CustomBuild>
   </ItemGroup>
 </Project>

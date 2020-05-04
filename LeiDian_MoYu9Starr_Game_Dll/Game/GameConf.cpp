@@ -131,7 +131,7 @@ void GameConf::ReadPetOut(const char* data)
 
 	DWORD length = m_stPetOut.Length;
 	m_stPetOut.No[m_stPetOut.Length++] = atoi(data) - 1;
-	printf("%d.出征宠物编号:%d\n", m_stPetOut.Length, m_stPetOut.No[length] + 1);
+	//printf("%d.出征宠物编号:%d\n", m_stPetOut.Length, m_stPetOut.No[length] + 1);
 }
 
 // 读取捡拾物品
@@ -146,7 +146,7 @@ void GameConf::ReadPickUp(const char * data)
 	m_stPickUp.PickUps[length].Type = type;
 	m_stPickUp.Length++;
 
-	printf("%d.自动捡拾物品:%s %08X\n", m_stPickUp.Length, data, type);
+	//printf("%d.自动捡拾物品:%s %08X\n", m_stPickUp.Length, data, type);
 }
 
 // 读取使用物品
@@ -161,7 +161,7 @@ void GameConf::ReadUse(const char * data)
 	m_stUse.Uses[length].Type = type;
 	m_stUse.Length++;
 
-	printf("%d.自动使用物品:%s %08X\n", m_stUse.Length, data, type);
+	//printf("%d.自动使用物品:%s %08X\n", m_stUse.Length, data, type);
 }
 
 // 读取丢弃物品
@@ -178,7 +178,7 @@ void GameConf::ReadDrop(const char * data)
 	//m_stDrop.Drops[length].Extra[0] = arr.GetValue2Int(1);
 	m_stDrop.Length++;
 
-	printf("%d.自动丢弃物品:%s %08X\n", m_stDrop.Length, data, type);
+	//printf("%d.自动丢弃物品:%s %08X\n", m_stDrop.Length, data, type);
 }
 
 // 读取售卖物品
@@ -193,7 +193,7 @@ void GameConf::ReadSell(const char * data)
 	m_stSell.Sells[length].Type = type;
 	m_stSell.Length++;
 
-	printf("%d.自动售卖物品:%s %08X\n", m_stSell.Length, data, type);
+	//printf("%d.自动售卖物品:%s %08X\n", m_stSell.Length, data, type);
 }
 
 // 读取存入物品
@@ -208,7 +208,7 @@ void GameConf::ReadCheckIn(const char* data)
 	m_stCheckIn.CheckIns[length].Type = type;
 	m_stCheckIn.Length++;
 
-	printf("%d.自动存入物品:%s %08X\n", m_stCheckIn.Length, data, type);
+	//printf("%d.自动存入物品:%s %08X\n", m_stCheckIn.Length, data, type);
 }
 
 // 读取合法宝
@@ -223,7 +223,7 @@ void GameConf::ReadTrump(const char* data)
 	m_stTrump.Trumps[length].Extra[0] = arr.GetValue2Int(1);
 	m_stTrump.Length++;
 
-	printf("%d.自动合法宝:%s %d\n", m_stCheckIn.Length, arr[0], arr.GetValue2Int(1));
+	//printf("%d.自动合法宝:%s %d\n", m_stCheckIn.Length, arr[0], arr.GetValue2Int(1));
 }
 
 // 读取其它设置
@@ -239,7 +239,7 @@ void GameConf::ReadSetting(const char * data)
 		strcpy(m_Setting.FBFile[m_Setting.FBFileCount], explode[1]);
 		m_Setting.FBFileCount++;
 	}
-	printf("%s:%s\n", explode[0], explode[1]);
+	//printf("%s:%s\n", explode[0], explode[1]);
 }
 
 // 转成物品类型
