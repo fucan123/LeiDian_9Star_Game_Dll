@@ -8,7 +8,7 @@ extern "C" {
 #endif
 
 	// 初始化运行库
-	DLLEXPORT void WINAPI Game_Init(HWND hWnd, const char* conf_path);
+	DLLEXPORT void WINAPI EntryIn(HWND hWnd, const char* conf_path);
 	// 游戏是否激活
 	bool WINAPI Game_IsValid();
 	// 游戏释放

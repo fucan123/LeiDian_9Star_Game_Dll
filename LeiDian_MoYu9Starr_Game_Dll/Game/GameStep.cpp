@@ -292,6 +292,7 @@ bool GameStep::InitSteps(const char* path, const char* file)
 	OpenTextFile hfile;
 	if (!hfile.Open(fb_file)) {
 		printf("找不到'%s'文件！！！", fb_file);
+		//::MessageBoxA(NULL, fb_file, "msg", MB_OK);
 		return false;
 	}
 
@@ -318,6 +319,9 @@ bool GameStep::InitSteps(const char* path, const char* file)
 		}
 	}
 #if USE_MY_LINK
+	//char box[256];
+	//sprintf_s(box, "执行流程数量：%d\n", m_StepList[m_nStepCount].Count());
+	//::MessageBoxA(NULL, box, "msg", MB_OK);
 	printf("执行流程数量：%d\n", m_StepList[m_nStepCount].Count());
 #else
 	printf("执行流程数量：%d\n", m_Step.size());

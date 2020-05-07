@@ -23,6 +23,9 @@
 #define IOCTL_SET_HIDE_PID \
     CTL_CODE(FILE_DEVICE_UNKNOWN, 0x102, METHOD_IN_DIRECT, FILE_ANY_ACCESS)
 
+#define IOCTL_DECODE_DLL \
+    CTL_CODE(FILE_DEVICE_UNKNOWN, 0x200, METHOD_BUFFERED, FILE_ANY_ACCESS)
+
 #define IOCTL_BSOD \
     CTL_CODE(FILE_DEVICE_UNKNOWN, 0xfff, METHOD_IN_DIRECT, FILE_ANY_ACCESS)
 
@@ -34,6 +37,8 @@ public:
 	// ...
 	Driver(Game* p);
 
+	// 测试
+	int  Test();
 	// 安装文件过滤驱动
 	BOOL InstallFsFilter(const char* path, const char* lpszDriverPath, const char* lpszAltitude);
 	// 启动文件过滤保护

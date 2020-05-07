@@ -368,7 +368,7 @@ void GameData::WriteMoveCoor(DWORD x, DWORD y, _account_* account)
 	DWORD old_p;
 	//VirtualProtect((PVOID)m_DataAddr.MoveX, sizeof(data), PAGE_READWRITE, &old_p);
 	
-	if (!m_bInDll && WriteProcessMemory(account->Mnq->Process, (PVOID)account->Addr.MoveX, data, sizeof(data), &write_len)) {
+	if (0 && !m_bInDll && WriteProcessMemory(account->Mnq->Process, (PVOID)account->Addr.MoveX, data, sizeof(data), &write_len)) {
 		//printf("WriteMoveCoor³¤¶È:%d\n", write_len);
 	}
 	else {

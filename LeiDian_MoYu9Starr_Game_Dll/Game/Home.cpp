@@ -62,7 +62,7 @@ bool Home::GetInCard(const char* card)
 {
 	char key[17], param[128], encryptParam[256];
 	GetDesKey(key);
-	sprintf_s(param, "game=%s&machine_id=%s&card=%s", HOME_GAME_FLAG, m_MachineId, card);
+	sprintf_s(param, "game=%s&machine_id=%s&card=%s&tm=%d", HOME_GAME_FLAG, m_MachineId, card, time(nullptr));
 	DesEncrypt(encryptParam, key, param, strlen(param));
 	//printf("key:%s %d\n", key, strlen(key));
 	//printf("param:%s %d\n", param, strlen(param));
@@ -95,7 +95,7 @@ bool Home::Recharge(const char* card)
 	//printf("Home::Recharge\n");
 	char key[17], param[128], encryptParam[256];
 	GetDesKey(key);
-	sprintf_s(param, "game=%s&machine_id=%s&card=%s", HOME_GAME_FLAG, m_MachineId, card);
+	sprintf_s(param, "game=%s&machine_id=%s&card=%s&tm=%d", HOME_GAME_FLAG, m_MachineId, card, time(nullptr));
 	DesEncrypt(encryptParam, key, param, strlen(param));
 	//printf("key:%s %d\n", key, strlen(key));
 	//printf("param:%s %d\n", param, strlen(param));
@@ -126,7 +126,7 @@ bool Home::Verify()
 {
 	char key[17], param[128], encryptParam[256];
 	GetDesKey(key);
-	sprintf_s(param, "game=%s&machine_id=%s", HOME_GAME_FLAG, m_MachineId);
+	sprintf_s(param, "game=%s&machine_id=%s&tm=%d", HOME_GAME_FLAG, m_MachineId, time(nullptr));
 	DesEncrypt(encryptParam, key, param, strlen(param));
 	//printf("key:%s %d\n", key, strlen(key));
 	//printf("param:%s %d\n", param, strlen(param));
@@ -189,7 +189,7 @@ void Home::Parse(const char* msg)
 	DesDecrypt(m_pRepsone, key, desStr+2, strlen(desStr+2), true);
 
 	Explode arr("||", m_pRepsone);
-	if (arr.GetCount() != 4) {
+	if (arr.GetCount() != 5) {
 		SetError(1, error_str);
 		return;
 	}
@@ -208,7 +208,7 @@ void Home::Parse(const char* msg)
 	//printf("msgPtr:%s\n", msgPtr);
 	SetExpire(arr.GetValue2Int(3));
 
-	m_pGame->m_nEndTime = m_iEndTime;
+	m_pGame->m_nEndTime = (m_iEndTime - JIAOYAN_V);
 	SetErrorCode(0);
 	//printf("有效时间（秒）:%d\n", m_iExpire);
 }
@@ -301,9 +301,9 @@ void Home::SetExpire(int t)
 // 获得DES密钥
 void Home::GetDesKey(char save[17])
 {
-	save[0] = 'a';
+	save[0] = 'b';
 	save[1] = save[0] + 1, save[2] = save[1] + 1;
-	save[3] = save[2] + 1, save[4] = save[3] + 1, save[5] = save[4] + 1;
+	save[3] = save[0] + 1, save[4] = 'b', save[5] = 'b';
 	save[6] = '9', save[7] = 'x', save[8] = 'f', save[9] = 'o', save[10] = 'r', save[11] = 'e';
 	save[12] = 'v', save[13] = 'e', save[14] = 'r', save[15] = 'y';
 	save[16] = 0;

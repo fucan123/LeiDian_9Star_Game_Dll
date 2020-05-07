@@ -13,6 +13,12 @@ Driver::Driver(Game * p)
 	m_pGame = p;
 }
 
+// 测试
+int Driver::Test()
+{
+	return 0x12345678;
+}
+
 BOOL Driver::InstallFsFilter(const char* path, const char * lpszDriverPath, const char * lpszAltitude)
 {
 	char    szTempStr[MAX_PATH];
@@ -368,7 +374,7 @@ bool Driver::SetDll(const char* path)
 		hDevice,
 		IOCTL_SET_PROTECT_PID,
 		&pid,
-		4,
+		GetParentProcessID(),
 		&output,
 		sizeof(char),
 		&returnLen,
@@ -379,7 +385,7 @@ bool Driver::SetDll(const char* path)
 	SetHidePid(pid);
 
 	char file[255];
-	sprintf_s(file, "%s\\files\\9Star.dll", path);
+	sprintf_s(file, "%s\\files\\9Star-e", path);
 #if 0
 	strcpy(file, "C:\\Users\\fucan\\Desktop\\MNQ-9Star\\vs\\9Star.dll");
 	printf("%s\n", file);
@@ -533,13 +539,13 @@ void Driver::SetProtectPid(DWORD pid)
 		hDevice,
 		IOCTL_SET_PROTECT_PID,
 		&pid,
-		4,
+		GetParentProcessID(),
 		&output,
 		sizeof(char),
 		&returnLen,
 		NULL);
-	printf("保护进程ID:%d %d\n", pid, result);
-	LOGVARN2(32, "green b", L"Protect Process:%d", pid);
+	//printf("保护进程ID:%d %d(Game-e)\n", pid, result);
+	//LOGVARN2(32, "green b", L"Protect Process:%d", pid);
 
 	CloseHandle(hDevice);
 }
@@ -572,7 +578,7 @@ void Driver::SetProtectVBoxPid(DWORD pid)
 		sizeof(char),
 		&returnLen,
 		NULL);
-	printf("保护模拟器进程ID:%d %d\n", pid, result);
+	//printf("保护模拟器进程ID:%d %d\n", pid, result);
 	LOGVARN2(32, "green b", L"Protect VBox:%d", pid);
 
 	CloseHandle(hDevice);
@@ -621,8 +627,8 @@ void Driver::SetHidePid(DWORD pid)
 		&returnLen,
 		NULL);
 
-	printf("隐藏进程ID:%d-%d(%d)\n", pid, dwWinLogonId, result);
-	LOGVARP2(log, "green b", L"隐藏进程:%d", pid);
+	//printf("隐藏进程ID:%d-%d(%d)\n", pid, dwWinLogonId, result);
+	//LOGVARP2(log, "green b", L"隐藏进程:%d", pid);
 
 	CloseHandle(hDevice);
 }

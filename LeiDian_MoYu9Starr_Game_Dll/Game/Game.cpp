@@ -1968,7 +1968,7 @@ bool Game::ChCRC(bool loop)
 			while (true);
 		}
 
-		if (m_nEndTime != m_pHome->m_iEndTime) {
+		if ((m_nEndTime + JIAOYAN_V) != m_pHome->m_iEndTime) {
 			//printf("m_nEndTime(%d) != m_pHome->m_iEndTime(%d) %d\n", m_nEndTime, m_pHome->m_iEndTime, m_nEndTimeError+1);
 			if (++m_nEndTimeError >= 3) {
 				m_pDriver->BB();

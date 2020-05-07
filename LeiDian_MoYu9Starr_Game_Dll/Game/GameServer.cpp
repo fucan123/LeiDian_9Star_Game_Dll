@@ -487,6 +487,13 @@ int GameServer::SendToOther(SOCKET s, SOCKET_OPCODE opcode, bool clear)
 	for (int i = 0; i < count; i++) {
 		Account* p = m_pGame->GetAccount(i);
 		if (p && m_pGame->IsOnline(p) && p->Socket != s) {
+			if (opcode == SCK_SMALLINFB) {
+				m_pGame->SetStatus(p, ACCSTA_ATFB, true);
+			}
+			else if (opcode == SCK_SMALLOUTFB) {
+				m_pGame->SetStatus(p, ACCSTA_ONLINE, true);
+			}
+
 			Send(p->Socket);
 			ret++;
 		}
@@ -564,8 +571,9 @@ void GameServer::OnRead(SOCKET client, int index, int opcode, const char* data, 
 		self->GetXL(p, data, len);
 		break;
 	case SCK_NOYAOSI: // 大号没有钥匙
-		self->m_iNoYaosi = 1;
-		//self->AskXLCount("大号没有钥匙");
+		LOG2(L"小号没有钥匙, 由{大号}开启副本", "blue b");
+		self->m_pGame->SetStatus(self->m_pGame->GetBigAccount(), ACCSTA_OPENFB, true);
+		self->m_pGame->m_pGameProc->OpenFB();
 		break;
 	case SCK_PICKUPITEM: // 捡物品
 		self->PickUpItem(p, data, len);

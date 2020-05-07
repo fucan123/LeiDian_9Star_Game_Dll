@@ -1018,6 +1018,7 @@ bool GameProc::ExecStep(Link<_step_*>& link, bool isfb)
 {
 	m_pStep = m_pGameStep->Current(link);
 	if (!m_pStep) {
+		LOG2(L"流程全部执行完毕.", "green");
 		return false;
 	}
 

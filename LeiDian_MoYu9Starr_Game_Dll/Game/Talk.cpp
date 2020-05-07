@@ -1,4 +1,5 @@
 #include "Game.h"
+#include "Home.h"
 #include "Talk.h"
 #include "PrintScreen.h"
 #include "GameProc.h"
