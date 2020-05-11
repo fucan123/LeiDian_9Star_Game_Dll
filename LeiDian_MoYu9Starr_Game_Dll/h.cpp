@@ -40,7 +40,7 @@ DLLEXPORT void WINAPI EntryIn(HWND hWnd, const char* conf_path)
 #if 0
 	AllocConsole();
 	freopen("CON", "w", stdout);
-	printf("Game_Init:%p\n", Game_Init);
+	//printf("Game_Init:%p\n", Game_Init);
 #endif
 #if 1
 	pfnNtQuerySetInformationThread f = (pfnNtQuerySetInformationThread)GetNtdllProcAddress("ZwSetInformationThread");

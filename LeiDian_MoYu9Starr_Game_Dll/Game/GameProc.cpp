@@ -2116,7 +2116,7 @@ _check_:
 		m_pGame->m_pItem->AddFullLife();
 	}
 	if (m_pStep->OpCount == 1 || m_pStep->OpCount >= 10) {
-		if (strcmp(m_stLast.NPCName, "四骑士祭坛") == 0 || strcmp(m_stLast.NPCName, "女伯爵祭坛") == 0) {
+		if (strcmp(m_stLast.NPCName, "四骑士祭坛") == 0 || strcmp(m_stLast.NPCName, "女伯爵祭坛2") == 0) {
 			Sleep(100);
 			if (CloseTipBox()) {
 				DbgPrint("--------有封印未解开，需要重置到记录步骤--------\n");

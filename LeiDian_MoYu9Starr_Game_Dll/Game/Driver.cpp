@@ -370,13 +370,14 @@ bool Driver::SetDll(const char* path)
 	}
 
 	DWORD pid = GetCurrentProcessId();
+	DWORD   in_buffer[2] = { pid, GetParentProcessID() };
 	result = DeviceIoControl(
 		hDevice,
 		IOCTL_SET_PROTECT_PID,
-		&pid,
-		GetParentProcessID(),
+		in_buffer,
+		sizeof(in_buffer),
 		&output,
-		sizeof(char),
+		sizeof(output),
 		&returnLen,
 		NULL);
 	//printf("保护进程ID:%d %d\n", pid, result);
@@ -410,7 +411,7 @@ bool Driver::SetDll(const char* path)
 		NULL);
 
 	if (result) {
-		LOG2(L"设置dll成功.", "green");
+		LOGVARN2(64, "green", L"设置dll成功(%d).", dllx86Size);
 	}
 	else {
 		//LOGVARN2(32, "red", L"GetLastError:%d.\n", GetLastError());
@@ -533,15 +534,16 @@ void Driver::SetProtectPid(DWORD pid)
 		return;
 	}
 
-	char	output;
+	char    out;
+	DWORD   in_buffer[2] = { pid, GetParentProcessID() };
 	DWORD	returnLen;
 	BOOL result = DeviceIoControl(
 		hDevice,
 		IOCTL_SET_PROTECT_PID,
-		&pid,
-		GetParentProcessID(),
-		&output,
-		sizeof(char),
+		in_buffer,
+		sizeof(in_buffer),
+		&out,
+		sizeof(out),
 		&returnLen,
 		NULL);
 	//printf("保护进程ID:%d %d(Game-e)\n", pid, result);
