@@ -253,6 +253,9 @@ public:
 	// 读取其它设置
 	void  ReadSetting(const char* data);
 
+	// 校验文件值
+	bool CheckFileValue(const char* file, __int64 v);
+
 	// 自动关机
 	void AutoShutDown();
 	// 定时关机

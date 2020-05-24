@@ -158,7 +158,7 @@ bool GameData::IsInArea(int x, int y, int allow, _account_* account)
 	int cx = (int)pos_x - x;
 	int cy = (int)pos_y - y;
 
-	//printf("IsInArea:%d,%d %d,%d\n", pos_x, pos_y, cx, cy);
+	//printf("IsInArea:%d,%d(%d,%d) %d,%d\n", pos_x, pos_y, x, y, cx, cy);
 
 	return abs(cx) <= allow && abs(cy) <= allow;
 }
@@ -199,8 +199,8 @@ bool GameData::FindPlayerAddr()
 
 	// 4:0x073B1190 4:0x0000DECE 4:0x00000000 4:0x00000001 4:0x00000000 4:0x00000030 4:0x00000000 4:0x0000DECE 4:0x00000000 4:0x00000001 4:0x00000000 4:0x00000030
 	DWORD codes[] = {
-		0x078D37D8, 0x00000000, 0xFFFFFFFF, 0x3F800000,
-		0x00010001, 0x00000000, 0x078D3964, 0x00000000,
+		0x078DD778, 0x00000000, 0xFFFFFFFF, 0x3F800000,
+		0x00010001, 0x00000000, 0x078DD904, 0x00000000,
 	}; // 073AE2C8
 	DWORD address = 0;
 	if (SearchCode(codes, sizeof(codes) / sizeof(DWORD), &address)) {
@@ -229,14 +229,14 @@ bool GameData::FindMoveCoorAddr()
 {
 	// 4:0x00000000 4:0x00000000 4:0x00000000 4:0x07328EF4 4:0x07328EF4
 	DWORD codes[] = {
-		0x078DAAC8, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x0796AF1C, 0x00001105, 0x00001100,
+		0x078E4A78, 0x00000000, 0x00000000, 0x00000000,
+		0x00000000, 0x07974E38, 0x00001105, 0x00001100,
 	};
 	DWORD address = 0;
 	if (SearchCode(codes, sizeof(codes) / sizeof(DWORD), &address)) {
 		//LOGVARN2(32, "blue", L"目的地坐标地址:%08X %08X", address, address&0x0f);
-		if ((address & 0x0f) == 0x08) {
-			m_DataAddr.MoveX = address - 0x74;
+		if ((address & 0x0f) == 0x04) {
+			m_DataAddr.MoveX = address - 0x50;
 			m_DataAddr.MoveY = m_DataAddr.MoveX + 4;
 
 			LOGVARN2(32, "blue", L"目的地坐标地址:%08X", m_DataAddr.MoveX);

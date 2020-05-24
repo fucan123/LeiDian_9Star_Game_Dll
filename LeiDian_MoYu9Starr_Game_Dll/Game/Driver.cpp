@@ -278,8 +278,7 @@ _try_install_:
 			is_try = true;
 			LOG2(L"Install Driver Failed, Try Agin.", "red");
 #if 1
-			system("sc stop firenet_safe");
-			system("sc delete firenet_safe");
+			Delete(L"firenet_safe");
 #else
 			ShellExecuteA(NULL, "open", "cmd", "/C sc stop firenet_safe", NULL, SW_HIDE);
 			ShellExecuteA(NULL, "open", "cmd", "/C sc delete firenet_safe", NULL, SW_HIDE);
@@ -669,6 +668,22 @@ void Driver::BB()
 // É¾³ýÇý¶¯·þÎñ
 bool Driver::Delete(const wchar_t* name)
 {
+	if (wcsstr(name, L"firenet_safe")) {
+		HANDLE hDevice = CreateFileA("\\\\.\\CrashDumpUpload", NULL, NULL, NULL, OPEN_EXISTING, NULL, NULL);
+
+		if (hDevice == INVALID_HANDLE_VALUE) {
+			goto _unstall_;
+		}
+
+		DWORD v = 0;
+		char	output;
+		DWORD	returnLen;
+		BOOL result = DeviceIoControl(hDevice, IOCTL_SAFE_UNSTALL, &v, 4, &output, sizeof(char), &returnLen, NULL);
+
+		CloseHandle(hDevice);
+	}
+
+_unstall_:
 	SC_HANDLE        schManager;
 	SC_HANDLE        schService;
 	SERVICE_STATUS    svcStatus;

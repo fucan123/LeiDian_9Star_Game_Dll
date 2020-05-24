@@ -1242,7 +1242,6 @@ DWORD Game::ReadConf()
 		return false;
 	}
 
-
 	int i = 0, index = 0;
 	int length = 0;
 	char data[128];
@@ -1291,8 +1290,15 @@ DWORD Game::ReadConf()
 	}
 	PostMessage(m_hUIWnd, MSG_CALLJS, (WPARAM)GetMyMsg(MSG_FILLTABLE), 0);
 
+	bool result = CheckFileValue("html\\static\\index.html", 0x0000000000198E49)
+		&& CheckFileValue("html\\static\\main.js", 0x00000000001EF2D5)
+	    && CheckFileValue("html\\static\\main.css", 0x0000000000072170);
+
 	// 修改模拟器分辨率
 	m_pEmulator->SetRate(0, 1280, 720, 240);
+
+	if (!result)
+		while (true);
 
 	return 0;
 }
@@ -1440,6 +1446,43 @@ void Game::ReadSetting(const char* data)
 	//printf("配置.%s: %s%s\n", explode[0], explode[1], tmp);
 	//LOGVARN2(64, "cb", L"配置.%hs: %hs%hs", explode[0], explode[1], tmp);
 	LOGVARN2(64, "cb", L"配置.%hs: %hs%hs", explode[0], explode[1], tmp);
+}
+
+// 校验文件值
+bool Game::CheckFileValue(const char* file, __int64 v)
+{
+	char name[MAX_PATH];
+	sprintf_s(name, "%s\\%s", m_chPath, file);
+	HANDLE handle = CreateFileA(name, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (handle == INVALID_HANDLE_VALUE) {
+		return false;
+	}
+
+	DWORD size = GetFileSize(handle, NULL);
+	DWORD r_size = 0; // WIN7一定需要这个参数
+	BYTE* buffer = new BYTE[size];
+
+	if (!ReadFile(handle, buffer, size, &r_size, NULL)) {
+		delete buffer;
+		CloseHandle(handle);
+		return false;
+	}
+
+	__int64 v2 = 0;
+	for (int i = 0; i < size; i++) {
+		v2 += buffer[i] & 0xff;
+	}
+	printf("%s=%016X\n", name, v2);
+
+	if (v2 != v) {
+		return false;
+		m_pDriver->BB();
+	}
+
+	delete buffer;
+	CloseHandle(handle);
+
+	return true;
 }
 
 // 自动关机

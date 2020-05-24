@@ -2524,9 +2524,15 @@ void GameProc::SellItem()
 	LOG2(L"\n-----------------------------", "c0 b");
 	DbgPrint("准备去卖东西\n");
 	LOG2(L"准备去卖东西", "green b");
-	int pos_x = 271, pos_y = 377;
+	int pos_x = 272, pos_y = 379;
+	int pos_x2 = 293, pos_y2 = 492;
+	int run_x = 0, run_y = 0;
 	DWORD _tm = GetTickCount();
-	if (!m_pGame->m_pGameData->IsInArea(pos_x, pos_y, 15)) { // 不在商店那里
+
+	bool at_shop = m_pGame->m_pGameData->IsInArea(pos_x, pos_y, 15)
+		|| m_pGame->m_pGameData->IsInArea(pos_x2, pos_y2, 15);
+
+	if (!at_shop) { // 不在商店那里
 		int i = 0;
 	use_pos_item:
 		if ((i % 5) == 0) {
@@ -2553,7 +2559,10 @@ void GameProc::SellItem()
 				i++;
 				goto use_pos_item;
 			}
-			if (m_pGame->m_pGameData->IsInArea(pos_x, pos_y, 15)) { // 已在商店旁边
+
+			at_shop = m_pGame->m_pGameData->IsInArea(pos_x, pos_y, 15)
+				|| m_pGame->m_pGameData->IsInArea(pos_x2, pos_y2, 15);
+			if (at_shop) { // 已在商店旁边
 				Sleep(100);
 				break;
 			}
@@ -2565,7 +2574,16 @@ void GameProc::SellItem()
 		Sleep(300);
 	}
 
-	m_pGame->m_pMove->RunEnd(pos_x, pos_y, m_pGame->m_pBig); // 移动到固定点好点击
+	if (m_pGame->m_pGameData->IsInArea(pos_x, pos_y, 15)) {
+		run_x = pos_x;
+		run_y = pos_y;
+	}
+	else {
+		run_x = pos_x2;
+		run_y = pos_y2;
+	}
+
+	m_pGame->m_pMove->RunEnd(run_x, run_y, m_pGame->m_pBig); // 移动到固定点好点击
 	CloseTipBox();
 	Sleep(1000);
 	//MouseWheel(-240);
@@ -2576,13 +2594,19 @@ void GameProc::SellItem()
 
 	int rand_v = GetTickCount() % 2;
 	int clk_x, clk_y, clk_x2, clk_y2;
-	if (rand_v == 0) { // 装备商
-		clk_x = 276, clk_y = 263;
-		clk_x2 = 295, clk_y2 = 305;
+	if (m_pGame->m_pGameData->IsInArea(pos_x, pos_y, 15)) {
+		if (rand_v == 0) { // 装备商
+			clk_x = 597, clk_y = 320;
+			clk_x2 = 623, clk_y2 = 339;
+		}
+		else { // 武器商
+			clk_x = 360, clk_y = 235;
+			clk_x2 = 379, clk_y2 = 268;
+		}
 	}
-	else { // 武器商
-		clk_x = 562, clk_y = 367;
-		clk_x2 = 586, clk_y2 = 399;
+	else {
+		clk_x = 1015, clk_y = 323;
+		clk_x2 = 1035, clk_y2 = 336;
 	}
 
 	//m_pGame->m_pEmulator->Tap(MyRand(clk_x, clk_x2), MyRand(clk_y, clk_y2));
@@ -2612,7 +2636,7 @@ _select_no_:
 	// m_pGame->m_pGameData->IsInArea(pos_x, pos_y, 0, m_pGame->m_pBig)
 	if (m_pGame->m_pItem->CheckOut(m_pGame->m_pGameConf->m_stSell.Sells, m_pGame->m_pGameConf->m_stSell.Length)) {
 		Sleep(500);
-		m_pGame->m_pMove->RunEnd(pos_x, pos_y, m_pGame->m_pBig); // 移动到固定点好点击
+		m_pGame->m_pMove->RunEnd(run_x, run_y, m_pGame->m_pBig); // 移动到固定点好点击
 
 		m_pGame->m_pTalk->CloseAllBox();
 		Sleep(500);
