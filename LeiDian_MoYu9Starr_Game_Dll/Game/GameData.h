@@ -63,6 +63,7 @@ typedef struct share_write_xy_data
 	DWORD X;        // X数值
 	DWORD Y;        // Y数值
 	DWORD PicScale; // 画面缩放数值
+	DWORD Value;    // 检验值
 	DWORD Flag;     // 0-主程序写入数据 1-Dll程序写入数据 2-写入画面缩放数值
 } ShareWriteXYData;
 

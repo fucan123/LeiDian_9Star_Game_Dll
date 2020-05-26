@@ -8,6 +8,7 @@
 #include "stdafx.h"
 
 #include "h.h"
+#include <My/Common/func.h>
 #include <My/Win32/PE.h>
 #include <My/Win32/Peb.h>
 

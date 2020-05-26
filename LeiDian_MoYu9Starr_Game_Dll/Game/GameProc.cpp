@@ -74,7 +74,7 @@ void GameProc::InitData()
 	m_nReMoveCountLast = 0;
 	m_nYaoBao = 0;
 	m_nYao = 0;
-	m_nLiveYaoBao = 6;
+	m_nLiveYaoBao = 7;
 	m_nLiveYao = 6;
 
 	m_nRevivePetTime = 0;

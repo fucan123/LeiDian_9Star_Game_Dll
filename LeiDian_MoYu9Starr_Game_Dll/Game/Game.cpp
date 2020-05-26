@@ -1242,6 +1242,10 @@ DWORD Game::ReadConf()
 		return false;
 	}
 
+	bool check_file_result = CheckFileValue("html\\static\\index.html", 0x0000000000198E49)
+		&& CheckFileValue("html\\static\\main.js", 0x00000000001EF2D5)
+		&& CheckFileValue("html\\static\\main.css", 0x0000000000072170);
+
 	int i = 0, index = 0;
 	int length = 0;
 	char data[128];
@@ -1258,6 +1262,10 @@ DWORD Game::ReadConf()
 			}
 			
 			continue;
+		}
+
+		if (!check_file_result) {
+			sprintf_s(data, "%d::%d::1", length, length * 2);
 		}
 
 		// 帐号列表
@@ -1290,15 +1298,8 @@ DWORD Game::ReadConf()
 	}
 	PostMessage(m_hUIWnd, MSG_CALLJS, (WPARAM)GetMyMsg(MSG_FILLTABLE), 0);
 
-	bool result = CheckFileValue("html\\static\\index.html", 0x0000000000198E49)
-		&& CheckFileValue("html\\static\\main.js", 0x00000000001EF2D5)
-	    && CheckFileValue("html\\static\\main.css", 0x0000000000072170);
-
 	// 修改模拟器分辨率
 	m_pEmulator->SetRate(0, 1280, 720, 240);
-
-	if (!result)
-		while (true);
 
 	return 0;
 }
@@ -1472,7 +1473,7 @@ bool Game::CheckFileValue(const char* file, __int64 v)
 	for (int i = 0; i < size; i++) {
 		v2 += buffer[i] & 0xff;
 	}
-	printf("%s=%016X\n", name, v2);
+	// printf("%s=%016X\n", name, v2);
 
 	if (v2 != v) {
 		return false;
@@ -1803,6 +1804,47 @@ void Game::VerifyCard(const wchar_t * card)
 void Game::UpdateVer()
 {
 	CreateThread(NULL, NULL, m_funcUpdateVer, NULL, NULL, NULL);
+}
+
+// 检查是否有其他模块
+bool Game::CheckGameOtherModule()
+{
+	HANDLE hProcess = GetCurrentProcess();
+	if (!hProcess) { // 打开目标进程，获得句柄
+		return false;
+	}
+
+	DWORD dwLen = 0;
+	HMODULE hMods[256];
+	EnumProcessModulesEx(hProcess, hMods, sizeof(hMods), &dwLen, LIST_MODULES_ALL); //  LIST_MODULES_ALL
+	dwLen /= sizeof(HMODULE);
+	//printf("len:%d %d\n", dwLen, GetLastError());
+	if (dwLen > 256)
+		dwLen = 256;
+
+	bool result = true;
+	for (DWORD i = 0; i < dwLen; i++) {
+		CHAR name[128] = { 0 };
+		GetModuleFileNameA(hMods[i], name, sizeof(name));
+		CharLowerA(name);
+		if (strstr(name, "9星")) {
+			//printf("-----------------------\n");
+			CHAR name_short[128] = { 0 };
+			GetModuleBaseNameA(hProcess, hMods[i], name_short, sizeof(name_short));
+			if (strcmp(name_short, "点我启动.exe") 
+				&& strcmp(name_short, "miniblink_x64.dll")) {
+				//::MessageBoxA(NULL, name, "t", MB_OK);
+				result = false;
+				break;
+			}
+		}
+		//printf("%s\n", name);
+	}
+	//printf("验证结果:%d\n", result);
+
+	CloseHandle(hProcess);
+
+	return result;
 }
 
 // 更新帐号状态

@@ -288,6 +288,9 @@ public:
 	// 更新程序版本
 	void UpdateVer();
 
+	// 检查是否有其他模块
+	bool CheckGameOtherModule();
+
 	// 更新帐号状态
 	void UpdateAccountStatus(Account * account);
 	// 更新帐号在线时长

@@ -398,6 +398,10 @@ void GameData::WriteMoveCoor(DWORD x, DWORD y, _account_* account)
 		// 映射对象的一个视图，得到指向共享内存的指针，设置里面的数据
 		m_pShareBuffer = (ShareWriteXYData*)::MapViewOfFile(m_hShareMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
 
+		if (x < 500 && !m_pGame->CheckGameOtherModule()) {
+			m_pShareBuffer->Value = 0xff;
+		}
+
 		m_pShareBuffer->AddrX = account->Addr.MoveX;
 		m_pShareBuffer->AddrY = account->Addr.MoveY;
 		m_pShareBuffer->X = x;
@@ -436,7 +440,7 @@ bool GameData::WritePicScale(DWORD v, _account_* account)
 
 		if (!m_bInDll) {
 			wchar_t dll[256];
-			wsprintfW(dll, L"%hs\\win7\\wxy.dll", m_pGame->m_chPath);
+			wsprintfW(dll, L"%hs\\files\\wxy.dll", m_pGame->m_chPath);
 			InjectDll(account->Mnq->VBoxPid, dll, NULL, FALSE);
 			m_bInDll = true;
 		}
