@@ -199,11 +199,18 @@ bool GameData::FindPlayerAddr()
 
 	// 4:0x073B1190 4:0x0000DECE 4:0x00000000 4:0x00000001 4:0x00000000 4:0x00000030 4:0x00000000 4:0x0000DECE 4:0x00000000 4:0x00000001 4:0x00000000 4:0x00000030
 	DWORD codes[] = {
-		0x078DD778, 0x00000000, 0xFFFFFFFF, 0x3F800000,
-		0x00010001, 0x00000000, 0x078DD904, 0x00000000,
+		0x07A4F758, 0x00000000, 0xFFFFFFFF, 0x3F800000,
+		0x00010001, 0x00000000, 0x07A4F8EC, 0x00000011,
 	}; // 073AE2C8
+
 	DWORD address = 0;
-	if (SearchCode(codes, sizeof(codes) / sizeof(DWORD), &address)) {
+	DWORD result = SearchCode(codes, sizeof(codes) / sizeof(DWORD), &address);
+	if (!result) {
+		codes[4] = 0x00010000;
+		result = SearchCode(codes, sizeof(codes) / sizeof(DWORD), &address);
+	}
+	
+	if (result) {
 		DWORD data = 0;
 		bool result = ReadProcessMemory(m_hGameProcess, (LPVOID)address, &data, sizeof(data), NULL);
 		//printf("人物首地址:%08X Data:%08X\n", address, data);
@@ -229,14 +236,14 @@ bool GameData::FindMoveCoorAddr()
 {
 	// 4:0x00000000 4:0x00000000 4:0x00000000 4:0x07328EF4 4:0x07328EF4
 	DWORD codes[] = {
-		0x078E4A78, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x07974E38, 0x00001105, 0x00001100,
+		0x07A56D98, 0x00000000, 0x00000000, 0x00000000,
+		0x00000000, 0x07ACF9F4, 0x00001105, 0x00001100,
 	};
 	DWORD address = 0;
 	if (SearchCode(codes, sizeof(codes) / sizeof(DWORD), &address)) {
 		//LOGVARN2(32, "blue", L"目的地坐标地址:%08X %08X", address, address&0x0f);
-		if ((address & 0x0f) == 0x04) {
-			m_DataAddr.MoveX = address - 0x50;
+		if ((address & 0x0f) == 0x00) {
+			m_DataAddr.MoveX = address - 0x3C;
 			m_DataAddr.MoveY = m_DataAddr.MoveX + 4;
 
 			LOGVARN2(32, "blue", L"目的地坐标地址:%08X", m_DataAddr.MoveX);
@@ -608,7 +615,7 @@ bool GameData::ReadGameMemory(DWORD flag)
 
 	MEMORY_BASIC_INFORMATION mbi;
 	memset(&mbi, 0, sizeof(MEMORY_BASIC_INFORMATION));
-	DWORD_PTR MaxPtr = 0x70000000; // 最大读取内存地址
+	DWORD_PTR MaxPtr = 0xf0000000; // 最大读取内存地址
 	DWORD_PTR max = 0;
 
 

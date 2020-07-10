@@ -286,6 +286,13 @@ int Item::PickUpItem(const char* name, int x, int y, int x2, int y2, int pickup_
 		LOGVARN2(64, "c0", L"%d.¼ñ¶«Î÷:%hs(%d,%d)", i, pick_name, pos_x, pos_y);
 		m_pGame->m_pGameProc->Click(pos_x, pos_y);
 		WaitForPickUpItem();
+		if (strcmp(name, ".") == 0) {
+			m_pGame->m_pTalk->CloseZuiHouChouJiang();
+			if (m_pGame->m_pTalk->ConfirmBtnIsOpen()) {
+				m_pGame->m_pTalk->ClickConfirmBtn(1);
+			}
+		}
+
 		count++;
 
 		Sleep(260);

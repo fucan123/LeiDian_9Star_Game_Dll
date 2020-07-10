@@ -413,6 +413,9 @@ void GameProc::OutFB(_account_* account)
 		Click(67, 360, 260, 393);  // 选项0 我要离开这里
 		m_pGame->m_pTalk->WaitTalkOpen(0x00);
 		Sleep(1000);
+		Click(67, 360, 260, 393);  // 选项0 再次点击一下
+		m_pGame->m_pTalk->WaitTalkOpen(0x00);
+		Sleep(1000);
 
 		if (m_pGame->m_pGameData->IsInFBDoor()) // 出去了
 			break;
@@ -579,6 +582,8 @@ void GameProc::InTeam(_account_* account)
 
 void GameProc::InFB(_account_* account)
 {
+	GoFBDoor(account);
+
 	wchar_t log[64];
 	DbgPrint("%s同意进副本\n", account->Name);
 	LOGVARP2(log, "blue b", L"%d同意进副本", account->Name);
@@ -666,6 +671,7 @@ int GameProc::AgreenMsg(const char* name, int icon_index, bool click, HWND hwnd)
 {
 	SetGameCursorPos(325, 62);
 
+#if 0
 	if (strcmp(name, "进副本图标") == 0) {
 		DWORD x = 0, y = 0;
 		m_pGame->m_pGameData->ReadCoor(&x, &y, m_pAccount);
@@ -674,6 +680,7 @@ int GameProc::AgreenMsg(const char* name, int icon_index, bool click, HWND hwnd)
 			Sleep(1000);
 		}
 	}
+#endif
 
 	wchar_t log[64];
 	int x = 280, x2 = 306;
@@ -931,7 +938,7 @@ void GameProc::ExecInFB()
 			Sleep(1000);
 			DbgPrint("点击进入游戏\n");
 			LOG2(L"点击进入游戏", "blue");
-			Click(600, 505, 700, 530);
+			Click(568, 537, 710, 575);
 			Sleep(2000);
 			DbgPrint("点击弹框登录\n");
 			LOG2(L"点击弹框登录", "blue");
@@ -1085,6 +1092,13 @@ bool GameProc::ExecStep(Link<_step_*>& link, bool isfb)
 			m_bNeedCloseBag = false;
 		}
 
+		if (m_nBossNum == 4) {
+			if (m_pGame->m_pTalk->ConfirmBtnIsOpen()) {
+				m_pGame->m_pTalk->ClickConfirmBtn(1);
+			}
+			m_pGame->m_pTalk->CloseZuiHouChouJiang();
+		}
+		
 		if (check_box) {
 			if (m_pGame->m_pTalk->CommonBoxIsOpen()) {
 				m_pGame->m_pTalk->CloseCommonBox();
@@ -2476,6 +2490,9 @@ void GameProc::PickUp()
 #endif
 
 	if (to_big) {
+		if (m_pGame->m_pTalk->ConfirmBtnIsOpen()) {
+			m_pGame->m_pTalk->ClickConfirmBtn(1);
+		}
 		CloseTipBox();
 		m_pGame->m_pTalk->CloseAllBox();
 		if (pickup_count == 0)
@@ -2538,6 +2555,9 @@ void GameProc::SellItem()
 		if ((i % 5) == 0) {
 			CloseTipBox();
 			m_pGame->m_pTalk->CloseAllBox();
+			if (m_pGame->m_pTalk->ConfirmBtnIsOpen()) {
+				m_pGame->m_pTalk->ClickConfirmBtn(1);
+			}
 		}
 		if (i > 0 && (i % 10) == 0 && i <= 100) {
 			m_pGame->SaveScreen("去商店卡住");
@@ -2592,6 +2612,7 @@ void GameProc::SellItem()
 	//MouseWheel(-240);
 	//Sleep(800);
 
+	bool chengli = false; // 城里
 	int rand_v = GetTickCount() % 2;
 	int clk_x, clk_y, clk_x2, clk_y2;
 	if (m_pGame->m_pGameData->IsInArea(pos_x, pos_y, 15)) {
@@ -2605,12 +2626,13 @@ void GameProc::SellItem()
 		}
 	}
 	else {
-		clk_x = 1015, clk_y = 323;
-		clk_x2 = 1035, clk_y2 = 336;
+		clk_x = 950, clk_y = 330;
+		clk_x2 = 969, clk_y2 = 360;
+		chengli = true;
 	}
 
 	//m_pGame->m_pEmulator->Tap(MyRand(clk_x, clk_x2), MyRand(clk_y, clk_y2));
-	if (m_pGame->m_pTalk->TalkBtnIsOpen()) {
+	if (!chengli && m_pGame->m_pTalk->TalkBtnIsOpen()) {
 		LOG2(L"点击对话按钮", "c0");
 		m_pGame->m_pTalk->NPC();
 	}
@@ -3130,6 +3152,7 @@ void GameProc::Keyboard(char key, int flag, HWND hwnd)
 int GameProc::IsNeedAddLife(int low_life)
 {
 	m_pGame->m_pGameData->ReadLife();
+	//printf("m_dwLife:%d\n", m_pGame->m_pGameData->m_dwLife);
 	if (m_pGame->m_pGameData->m_dwLife == 0)
 		return -1;
 	if (m_pGame->m_pGameData->m_dwLife < low_life)
@@ -3150,6 +3173,8 @@ bool GameProc::IsForegroundWindow()
 // 检查是否修改了数据
 bool GameProc::ChNCk()
 {
+
+	return true;
 	//printf("bool GameProc::ChNCk().\n");
 	FuncAddr func;
 	func.f = &Home::IsValid;

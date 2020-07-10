@@ -33,6 +33,8 @@ public:
 	void CloseSpeakBox();
 	// 确定按钮是否打开
 	bool SureBtnIsOpen();
+	// 最后关抽奖
+	bool CloseZuiHouChouJiang();
 	// 确认按钮是否打开
 	bool ConfirmBtnIsOpen();
 	// 操作确认按钮flag=0取消 flag=1确定

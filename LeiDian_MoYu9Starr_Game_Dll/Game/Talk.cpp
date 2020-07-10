@@ -164,6 +164,22 @@ bool Talk::SureBtnIsOpen()
 	return m_pGame->m_pPrintScreen->ComparePixel("提示框", nullptr, 1) > 0;
 }
 
+// 最后关抽奖
+bool Talk::CloseZuiHouChouJiang()
+{
+	// 截取确认框取消按钮
+	m_pGame->m_pPrintScreen->CopyScreenToBitmap(m_pGame->m_pGameProc->m_hWndGame, 466, 430, 476, 440, 0, true);
+	if (m_pGame->m_pPrintScreen->ComparePixel("最后关抽奖", nullptr, 1) == 0)
+		return false;
+
+	m_pGame->m_pGameProc->Click(590, 80, 608, 98); // 关闭的按钮
+	Sleep(100);
+	if (WaitForConfirmBtnOpen(1500)) {
+		ClickConfirmBtn(1);
+	}
+	return true;
+}
+
 // 确认按钮是否打开
 bool Talk::ConfirmBtnIsOpen()
 {
@@ -259,7 +275,7 @@ bool Talk::IsInLoginPic(HWND hwnd)
 	}
 
 	// 右侧帐号图标
-	m_pGame->m_pPrintScreen->CopyScreenToBitmap(hwnd, 1205, 140, 1215, 150, 0, true);
+	m_pGame->m_pPrintScreen->CopyScreenToBitmap(hwnd, 1215, 140, 1225, 150, 0, true);
 	return m_pGame->m_pPrintScreen->ComparePixel("登录按钮", nullptr, 1) > 0;
 }
 

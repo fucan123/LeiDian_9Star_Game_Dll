@@ -31,7 +31,7 @@ void GameServer::Listen(USHORT port)
 	m_Server.onread = OnRead;
 	m_Server.onclose = OnClose;
 
-	LOGVARN(64, L"启动监听服务, 端口:%d", port);
+	//LOGVARN(64, L"启动监听服务, 端口:%d", port);
 	m_Server.Listen(port);
 }
 

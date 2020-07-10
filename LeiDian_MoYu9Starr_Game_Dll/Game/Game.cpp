@@ -567,7 +567,7 @@ int Game::CheckLoginTimeOut()
 		}
 	}
 
-	if ((now_time - m_nVerifyTime) > 120) {
+	if ((now_time - m_nVerifyTime) > 300) {
 		//printf("验证.\n");
 		if (!m_pHome->Verify()) {
 			if (++m_nVerifyError >= 6) {
@@ -1832,7 +1832,8 @@ bool Game::CheckGameOtherModule()
 			CHAR name_short[128] = { 0 };
 			GetModuleBaseNameA(hProcess, hMods[i], name_short, sizeof(name_short));
 			if (strcmp(name_short, "点我启动.exe") 
-				&& strcmp(name_short, "miniblink_x64.dll")) {
+				&& strcmp(name_short, "miniblink_x64.dll")
+				&& strcmp(name_short, "web.dll")) {
 				//::MessageBoxA(NULL, name, "t", MB_OK);
 				result = false;
 				break;
@@ -2040,9 +2041,12 @@ bool Game::ChCRC(bool loop)
 		return false;
 	}
 	else {
+
+		return true;
+
 		int now_time = time(nullptr);
 		int start_long = now_time - m_nStartTime;
-		int need_verify_num = start_long / 160;
+		int need_verify_num = start_long / 360;
 #if 0
 		printf("ChCRC(%d) 验证:%d(%d/%d) %d=%d %p.\n", now_time - m_nVerifyTime, now_time - m_nStartTime, 
 			m_nVerifyNum, need_verify_num, m_nEndTime, m_pHome->m_iEndTime, &m_pHome->m_iEndTime);

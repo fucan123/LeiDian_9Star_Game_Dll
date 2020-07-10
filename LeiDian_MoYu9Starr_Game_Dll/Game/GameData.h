@@ -1,11 +1,11 @@
 #pragma once
 #include <Windows.h>
 
-#define NAME_OFFSET     0x0FC // 人物的名称
+#define NAME_OFFSET     0x104 // 人物的名称
 #define X_OFFSET        0x028 // X坐标相对于人物首地址的偏移
 #define Y_OFFSET        0x02C // Y坐标相对于人物首地址的偏移
-#define LIFE_OFFSET     0xF60 // 血量相对于人物首地址的偏移
-#define LIFE_MAX_OFFSET 0xD40 // 血量最大值相对于人物首地址的偏移
+#define LIFE_OFFSET     0xFC8 // 血量相对于人物首地址的偏移
+#define LIFE_MAX_OFFSET 0xDB8 // 血量最大值相对于人物首地址的偏移
 
 #define CLICK_X_OPEN_MAP  1120 // 打开地图坐标X
 #define CLICK_Y_OPEN_MAP  66   // 打开地图坐标Y

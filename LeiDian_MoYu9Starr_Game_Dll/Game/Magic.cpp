@@ -14,25 +14,31 @@ Magic::Magic(Game* p)
 int Magic::UseMagic(const char* name, int mv_x, int mv_y)
 {
 	wchar_t log[128];
-	int click_x = 0, click_y = 0;
-	GetMagicClickPos(name, click_x, click_y);
-	if (click_x && click_y) {
+	if (strcmp(name, "诸神裁决") == 0) {
+		int click_x = 0, click_y = 0;
+	    GetMagicClickPos(name, click_x, click_y);
+		m_pGame->m_pGameProc->Click(click_x, click_y);
+		return -1;
+	}
+	
+	char key = GetMagicKey(name);
+	if (key) {
 		if (!mv_x && !mv_y) {
 			DWORD use_ms = GetTickCount();
-			DbgPrint("使用技能:%s(%d,%d)\n", name, click_x, click_y);
-			LOGVARP2(log, "c6", L"1.使用技能:%hs(%d,%d)", name, click_x, click_y);
+			DbgPrint("使用技能:%s(%d)\n", name, key);
+			LOGVARP2(log, "c6", L"1.使用技能:%hs(%d)", name, key);
 
 			DWORD use_ms_2 = use_ms;
 			if (m_pGame->m_pGameProc->m_nBossNum >= 0 && strcmp(name, "最终审判") == 0) {
-				UseShenPan(click_x, click_y);
+				UseShenPan(0, 0);
 				return 1;
 				for (int j = 0; j < 300; j += 100) {
-					m_pGame->m_pGameProc->Click(click_x, click_y);
+					m_pGame->m_pGameProc->Keyboard(key);
 					Sleep(100);
 				}
 			}
 			else {
-				m_pGame->m_pGameProc->Click_Send(click_x, click_y);
+				m_pGame->m_pGameProc->Keyboard(key);
 			}
 
 			int wait_ms = strcmp(name, "最终审判") == 0 ? 300 : 1000;
@@ -81,31 +87,34 @@ int Magic::UseMagic(const char* name, int mv_x, int mv_y)
 					}
 				}
 				
+				//GetMagicClickPos(name, click_x, click_y);
 				DWORD _ms = GetTickCount();
-				DbgPrint("%d.再次使用技能:%s(%d,%d)\n", i + 1, name, click_x, click_y);
-				LOGVARP2(log, "c6", L"%d.再次使用技能:%hs(%d,%d) %d/%d", i + 1, name, click_x, click_y,
+				DbgPrint("%d.再次使用技能:%s(%d)\n", i + 1, name, key);
+				LOGVARP2(log, "c6", L"%d.再次使用技能:%hs(%d) %d/%d", i + 1, name, key,
 					_ms - use_ms_2, _ms - use_ms);
 				
 				use_ms_2 = _ms;
 				if (0 && strcmp(name, "最终审判") == 0) {
 					for (int j = 0; j < 300; j += 100) {
-						m_pGame->m_pGameProc->Click(click_x, click_y);
+						m_pGame->m_pGameProc->Keyboard(key);
 						Sleep(100);
 					}
 				}
 				else {
-					m_pGame->m_pGameProc->Click_Send(click_x, click_y);
+					m_pGame->m_pGameProc->Keyboard(key);
 				}
 			}
 			DbgPrint("技能:%s未放出\n", name);
 			LOGVARP2(log, "red", L"技能:%hs未放出\n", name);
 		}
 		else {
+#if 0
 			DbgPrint("使用技能:%s(%d,%d) 滑动(%d,%d)\n", name, click_x, click_y, mv_x, mv_y);
 			LOGVARP2(log, "red", L"使用技能:%s(%d,%d) 滑动(%d,%d)", name, click_x, click_y, mv_x, mv_y);
 			m_pGame->m_pGameProc->Click(click_x, click_y, 0x01);
 			m_pGame->m_pGameProc->MouseMove(click_x, click_y, mv_x, mv_y);
 			m_pGame->m_pGameProc->Click(click_x + mv_x, click_y + mv_y, 0x02);
+#endif
 
 			return -1;
 		}
@@ -146,7 +155,8 @@ int Magic::UseShenPan(int click_x, int click_y)
 	DWORD start_ms = GetTickCount(), use_ms, now_ms;
 	while (n++ < 10) {
 		use_ms = GetTickCount();
-		m_pGame->m_pGameProc->Click_Send(click_x, click_y);
+		//m_pGame->m_pGameProc->Click_Send(click_x, click_y);
+		m_pGame->m_pGameProc->Keyboard('3');
 		now_ms = GetTickCount();
 		if ((now_ms - use_ms) >= 100) { // 接受事件达到200毫秒
 			flag = 1;
@@ -172,6 +182,21 @@ void Magic::UseGongJiFu()
 	m_pGame->m_pGameProc->Click(1153, 355, 1170, 372);
 }
 
+// 获取技能的按键
+char Magic::GetMagicKey(const char* name)
+{
+	if (strcmp(name, "星陨") == 0)         // 按键1 最下面
+		return '1';
+	else if (strcmp(name, "影魂契约") == 0) // 按键2
+		return '2';
+	else if (strcmp(name, "最终审判") == 0) // 按键3
+		return '3';
+	else if (strcmp(name, "虚无空间") == 0) // 按键4
+		return '4';
+
+	return 0;
+}
+
 // 获取技能点击坐标
 void Magic::GetMagicClickPos(const char* name, int& x, int& y)
 {
@@ -189,7 +214,7 @@ void Magic::GetMagicClickPos(const char* name, int& x, int& y)
 	}
 	else if (strcmp(name, "虚无空间") == 0) { // 按键4
 		x = MyRand(1153, 1196);
-		y = MyRand(440, 482);
+		y = MyRand(475, 485);
 	}
 	else if (strcmp(name, "诸神裁决") == 0) { // ...
 		x = MyRand(1045, 1086);

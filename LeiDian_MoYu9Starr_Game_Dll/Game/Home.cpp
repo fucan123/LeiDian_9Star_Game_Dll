@@ -124,9 +124,14 @@ bool Home::Recharge(const char* card)
 
 bool Home::Verify()
 {
+	char mac_id[33];
+	MachineID mac;
+	mac.GetMachineID(mac_id);
+	mac_id[32] = 0;
+
 	char key[17], param[128], encryptParam[256];
 	GetDesKey(key);
-	sprintf_s(param, "game=%s&machine_id=%s&tm=%d", HOME_GAME_FLAG, m_MachineId, time(nullptr));
+	sprintf_s(param, "game=%s&machine_id=%s&tm=%d", HOME_GAME_FLAG, mac_id, time(nullptr));
 	DesEncrypt(encryptParam, key, param, strlen(param));
 	//printf("key:%s %d\n", key, strlen(key));
 	//printf("param:%s %d\n", param, strlen(param));

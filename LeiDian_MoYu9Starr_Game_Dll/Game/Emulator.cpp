@@ -360,8 +360,8 @@ void Emulator::WatchInGame(_account_* account)
 #else
 				DbgPrint("点击进入游戏\n");
 				LOG2(L"点击进入游戏", "blue_r b");
-				m_pGame->m_pGameProc->Click(600, 505, 700, 530);
-				Sleep(1000);
+				m_pGame->m_pGameProc->Click(568, 537, 710, 575);
+				Sleep(6000);
 
 				DbgPrint("点击弹框登录\n");
 				LOG2(L"点击弹框登录", "blue_r b");

@@ -15,6 +15,8 @@ public:
 	int  UseShenPan(int click_x, int click_y);
 	// 使用攻击符
 	void UseGongJiFu();
+	// 获取技能的按键
+	char GetMagicKey(const char* name);
 	// 获取技能点击坐标
 	void GetMagicClickPos(const char* name, int& x, int& y);
 	// 技能是否放出
