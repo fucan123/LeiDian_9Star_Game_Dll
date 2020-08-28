@@ -199,8 +199,8 @@ bool GameData::FindPlayerAddr()
 
 	// 4:0x073B1190 4:0x0000DECE 4:0x00000000 4:0x00000001 4:0x00000000 4:0x00000030 4:0x00000000 4:0x0000DECE 4:0x00000000 4:0x00000001 4:0x00000000 4:0x00000030
 	DWORD codes[] = {
-		0x07A4F758, 0x00000000, 0xFFFFFFFF, 0x3F800000,
-		0x00010001, 0x00000000, 0x07A4F8EC, 0x00000011,
+		0x07A15468, 0x00000000, 0xFFFFFFFF, 0x3F800000,
+		0x00010001, 0x00000000, 0x07A15604, 0x00000011,
 	}; // 073AE2C8
 
 	DWORD address = 0;
@@ -234,16 +234,22 @@ bool GameData::FindPlayerAddr()
 // 获取目的地坐标地址
 bool GameData::FindMoveCoorAddr()
 {
-	// 4:0x00000000 4:0x00000000 4:0x00000000 4:0x07328EF4 4:0x07328EF4
+	// 4:0x00 4:0x00 4:0x00 4:0x00 4:0x00 4:0x00 4:0x00 4:0x000014DB
 	DWORD codes[] = {
-		0x07A56D98, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x07ACF9F4, 0x00001105, 0x00001100,
+		0x00000011, 0x00000000, 0x00000000, 0x00000011,
+		0x00000000, 0x00000000, 0x00000000, 0x00000000,
+		0x00000000, 0x00000000, 0x00000000, 0x00000022,
+		0x00000022, 0x00000022, 0x00000022, 0x00000022,
+		0x00000022, 0x00000000, 0x00000000, 0x00000000,
 	};
 	DWORD address = 0;
 	if (SearchCode(codes, sizeof(codes) / sizeof(DWORD), &address)) {
+		DWORD data[sizeof(codes)/sizeof(DWORD)];
+		bool result = ReadProcessMemory(m_hGameProcess, (LPVOID)address, &data, sizeof(data), NULL);
 		//LOGVARN2(32, "blue", L"目的地坐标地址:%08X %08X", address, address&0x0f);
-		if ((address & 0x0f) == 0x00) {
-			m_DataAddr.MoveX = address - 0x3C;
+		if (data[0x0C] > 30 && data[0x0C] < 1000 && data[0x0D] > 30 && data[0x0D] < 1060 && data[0x10] < 0x10
+			&& address > 0x10000000 && (address&0x0f) == 0x08) {
+			m_DataAddr.MoveX = address + 0x30;
 			m_DataAddr.MoveY = m_DataAddr.MoveX + 4;
 
 			LOGVARN2(32, "blue", L"目的地坐标地址:%08X", m_DataAddr.MoveX);

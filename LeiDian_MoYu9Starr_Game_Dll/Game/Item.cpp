@@ -628,6 +628,16 @@ void Item::UseItem(const char* name, int x, int y)
 		GetItemBtnPos(x, y, 0);
 		m_pGame->m_pGameProc->Click(x, y); // 点击使用按钮
 		LOGVARN2(64, "c0", L"使用物品完成", name, x, y);
+
+		if (0 && strstr(name, "30") != nullptr) {    // 合成活动选择
+			//if (m_pGame->m_pTalk->WaitTalkOpen(0x00)) {
+			    Sleep(1500);
+				m_pGame->m_pTalk->Select(0x03);
+				Sleep(800);
+				m_pGame->m_pTalk->Select(0x00);
+				Sleep(500);
+			//}
+		}
 	}
 	else {
 		LOGVARN2(64, "c0", L"使用物品:%hs(%d,%d)失败", name, x, y);

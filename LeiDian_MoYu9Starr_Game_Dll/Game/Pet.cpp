@@ -48,15 +48,15 @@ bool Pet::PetFuck(DWORD* nums, DWORD length)
 bool Pet::Revive()
 {
 	bool result = false;
-	m_pGame->m_pPrintScreen->CopyScreenToBitmap(m_pGame->m_hWndBig, 62, 162, 305, 168, 0, true);
+	m_pGame->m_pPrintScreen->CopyScreenToBitmap(m_pGame->m_hWndBig, 62, 162, 335, 168, 0, true);
 	if (!result) { // 第一个宠物 62-97
 		result = m_pGame->m_pPrintScreen->GetGrayPiexlCount(0, 35, false) > 100;
 	}
 	if (!result) { // 第二个宠物 152-187
-		result = m_pGame->m_pPrintScreen->GetGrayPiexlCount(90, 125, false) > 100;
+		result = m_pGame->m_pPrintScreen->GetGrayPiexlCount(125, 160, false) > 100;
 	}
 	if (!result) { // 第三个宠物 252-287
-		result = m_pGame->m_pPrintScreen->GetGrayPiexlCount(190, 225, false) > 100;
+		result = m_pGame->m_pPrintScreen->GetGrayPiexlCount(235, 270, false) > 100;
 	}
 
 	if (result) {

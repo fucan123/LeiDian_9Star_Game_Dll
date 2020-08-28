@@ -156,7 +156,7 @@ bool Home::Verify()
 
 	//MessageBox(NULL, m_MsgStr, L"XXX", MB_OK);
 	//printf("%d, %s ÄÚÈÝ->%s %s %d\n", m_Error, m_MsgStr, m_pRepsone, result.c_str(), result.length());
-
+	//m_pGame->Alert(L"NEW", 1);
 	return m_Error == 0;
 }
 

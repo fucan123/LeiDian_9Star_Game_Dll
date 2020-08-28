@@ -3,7 +3,7 @@
 #include "HttpClient.h"
 #include <string>
 
-#define HOME_HOST      L"39.100.110.77"
+#define HOME_HOST      L"137.59.149.38"
 //#define HOME_HOST      L"www.fuzhu.com"
 #define HOME_GAME_FLAG "1"
 #define JIAOYAN_V      16899

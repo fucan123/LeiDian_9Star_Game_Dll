@@ -387,23 +387,9 @@ void GameProc::OutFB(_account_* account)
 		DbgPrint("%s出副本(%d)\n", account->Name, i);
 		LOGVARN2(64, "c0", L"%hs出副本(%d)\n", account->Name, i);
 
-		int num = MyRand(1, 3);
-		if (num == 1) {
-			m_pGame->m_pMove->RunEnd(890, 1100, account, true, 2000); // 移动到固定地点
-			Sleep(1000);
-			Click(190, 503, 195, 505); // 点击NPC
-		}
-		else if (num == 2) {
-			m_pGame->m_pMove->RunEnd(889, 1102, account, true, 2000); // 移动到固定地点
-			Sleep(1000);
-			Click(285, 490, 296, 500); // 点击NPC
-		}
-		else {
-			m_pGame->m_pMove->RunEnd(890, 1100, account, true, 2000); // 移动到固定地点
-			Sleep(1000);
-			Click(345, 426, 360, 450); // 点击NPC
-		}
-		
+		m_pGame->m_pMove->RunEnd(890, 1100, account, true, 2000); // 移动到固定地点
+		Sleep(1000);
+		Click(206, 500); // 点击NPC
 
 		m_pGame->m_pTalk->WaitTalkOpen(0x00);
 		Sleep(1000);
@@ -2626,8 +2612,8 @@ void GameProc::SellItem()
 		}
 	}
 	else {
-		clk_x = 950, clk_y = 330;
-		clk_x2 = 969, clk_y2 = 360;
+		clk_x = 960, clk_y = 330;
+		clk_x2 = 963, clk_y2 = 360;
 		chengli = true;
 	}
 
