@@ -244,8 +244,6 @@ public:
 	bool m_bClearKaiRui = false;
 	// 是否重置到记录步骤
 	bool m_bIsResetRecordStep = false;
-	// 是否第一次移动, 需要点一下地图
-	bool m_bIsFirstMove = true;
 	// 是否玩副本
 	bool m_bPlayFB = true;
 	// 
@@ -255,6 +253,8 @@ public:
 	// 是否捡了最后关物品
 	bool m_bIsPickLast = false;
 
+	// 是否第一次移动, 需要点一下地图
+	int m_nFirstMove = 0;
 	// 打了第几个BOSS
 	int m_nBossNum = 0;
 	// 是否重开副本0-不重开 1-直接出去重开 2-退出登录再重开 

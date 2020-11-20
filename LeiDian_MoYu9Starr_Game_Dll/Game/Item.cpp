@@ -614,10 +614,10 @@ void Item::UseItem(const char* name, int x, int y)
 	LOGVARN2(64, "c0", L"使用物品:%hs(%d,%d)", name, x, y);
 	m_pGame->m_pGameProc->Click(x, y);
 	if (WaitForItemBtnOpen()) {
-		Sleep(150);
+		Sleep(300);
 		// 点击物品出来操作按钮旁边的图标
 		m_pGame->m_pPrintScreen->CopyScreenToBitmap(m_pGame->m_pGameProc->m_hWndGame, 320, 82, 375, 145, 0, true);
-		if (m_pGame->m_pPrintScreen->ComparePixel("30星神兽碎片+3", nullptr, 1) > 0) // 不要去使用30星神兽碎片+3
+		if (m_pGame->m_pPrintScreen->ComparePixel("30星神兽碎片+3使用", nullptr, 1) > 0) // 不要去使用30星神兽碎片+3
 			return;
 
 		if (!ItemBtnIsOpen()) {
@@ -627,17 +627,20 @@ void Item::UseItem(const char* name, int x, int y)
 
 		GetItemBtnPos(x, y, 0);
 		m_pGame->m_pGameProc->Click(x, y); // 点击使用按钮
-		LOGVARN2(64, "c0", L"使用物品完成", name, x, y);
 
-		if (0 && strstr(name, "30") != nullptr) {    // 合成活动选择
-			//if (m_pGame->m_pTalk->WaitTalkOpen(0x00)) {
-			    Sleep(1500);
-				m_pGame->m_pTalk->Select(0x03);
-				Sleep(800);
-				m_pGame->m_pTalk->Select(0x00);
-				Sleep(500);
-			//}
+		if (strstr(name, "30") != nullptr) {  // 合成活动选择:30+1或+2
+			Sleep(1500);
+			m_pGame->m_pTalk->Select(0x03); // 选择第4个.全部一键合成
+			Sleep(800);
+			m_pGame->m_pTalk->Select(0x03); // 选择第4个.全部一键合成
+			Sleep(800);
+			m_pGame->m_pTalk->Select(0x01); // 选择第2个.合成一个碎片
+			Sleep(800);
+			m_pGame->m_pTalk->Select(0x00); // 选择第1个.确定
+			Sleep(500);
 		}
+
+		LOGVARN2(64, "c0", L"使用物品完成", name, x, y);
 	}
 	else {
 		LOGVARN2(64, "c0", L"使用物品:%hs(%d,%d)失败", name, x, y);

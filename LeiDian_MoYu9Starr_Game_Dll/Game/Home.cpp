@@ -36,7 +36,7 @@ bool Home::IsValid()
 #ifdef _DEBUG
 	return true;
 #endif
-#if 1
+#if 0
 	if (m_bFree)
 		return true;
 #endif

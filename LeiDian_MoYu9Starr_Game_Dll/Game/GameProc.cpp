@@ -60,12 +60,13 @@ void GameProc::InitData()
 	m_bIsRecordStep = false;
 	m_bClearKaiRui = false;
 	m_bIsResetRecordStep = false;
-	m_bIsFirstMove = true;
 	m_bPlayFB = true;
 	m_bAtFB = false;
 	m_bToBig = false;
 	m_bNeedCloseBag = false;
 	m_bIsPickLast = false;
+
+	m_nFirstMove = 0;
 
 	m_nBossNum = 0;
 	m_nFBTimeLongOne = 0;
@@ -176,13 +177,16 @@ void GameProc::GoLeiMing()
 						}	
 					}
 					Sleep(1000);
+					if (CloseTipBox()) {
+						Sleep(1000);
+					}
 					LOG2(L"对话罗德·兰.", "c6");
 					Click(580, 535, 586, 558); // 罗德·兰
 					Sleep(1000);
 				}
 			}
 			else {
-				if ((i % 10) == 0) {
+				if ((i % 5) == 0) {
 					LOGVARN2(32, "cb", L"%d秒后对话罗德·兰.", max_wait - i)
 				}
 			}
@@ -206,6 +210,9 @@ void GameProc::GoLeiMing()
 			Sleep(500);
 
 		Sleep(1000);
+		if (CloseTipBox()) {
+			Sleep(1000);
+		}
 		LOG2(L"对话娜塔莉.", "c6");
 		Click(716, 200, 726, 206); // 点击娜塔莉
 		Sleep(500);
@@ -346,6 +353,8 @@ _start_:
 			goto _start_;
 		}
 	}
+	Sleep(1000);
+	m_pGame->m_pTalk->Select(0x01); // 阿拉玛的哭泣
 	Sleep(1000);
 	m_pGame->m_pTalk->Select(account->IsBig ? 0x00 : 0x01); // 大号用钥匙, 小号用项链
 	Sleep(1000);
@@ -723,7 +732,7 @@ int GameProc::AgreenMsg(const char* name, int icon_index, bool click, HWND hwnd)
 
 	DbgPrint("点击接受或同意按钮\n");
 	LOG2(L"点击接受或同意按钮", "green");
-	Click(835, 475, 850, 490); // 点击接受按钮同意
+	Click(875, 475, 960, 490); // 点击接受按钮同意
 	return 1;
 }
 
@@ -1341,19 +1350,20 @@ bool GameProc::ExecStep(Link<_step_*>& link, bool isfb)
 
 		bool use_yao_bao = false;
 		if (m_pStep->OpCode == OP_MOVE || m_pStep->OpCode == OP_MOVERAND || m_pStep->OpCode == OP_MOVENPC) {
+			m_nFirstMove++;
 			mov_i++;
 			if (mov_i == 50 && mov_i <= 60) {
 				CloseTipBox(); // 关闭弹出框
 			}
 			if (mov_i > 0 && (mov_i % 45) == 0) {
 				m_pGame->m_pItem->GetQuickYaoOrBaoNum(m_nYaoBao, m_nYao);
-				if (m_bIsFirstMove) {
+				if (m_nFirstMove < 8) {
 					m_pGame->m_pItem->SwitchMagicQuickBar(); // 切换到技能快捷栏
 					m_pGame->m_pTalk->CloseSheJiaoBox(true);
 				}
 			}
 			if ((mov_i % 50) == 0) {
-				if (m_bIsFirstMove) {
+				if (m_nFirstMove < 8) {
 					m_pGame->m_pTalk->CloseSheJiaoBox(true);
 				}
 			}
@@ -1577,10 +1587,10 @@ bool GameProc::StepIsComplete()
 			m_nReMoveCountLast = 0;
 			result = true;
 
-			if (m_bIsFirstMove) {
+			if (m_nFirstMove != 10) {
 				// 切换到技能快捷栏
 				m_pGame->m_pItem->SwitchMagicQuickBar();
-				m_bIsFirstMove = false;
+				m_nFirstMove = 10;
 			}
 			goto end;
 		}
@@ -1621,7 +1631,7 @@ end:
 // 移动
 void GameProc::Move(bool rand_click)
 {
-	if (m_bIsFirstMove) {
+	if (m_nFirstMove < 5) {
 		DWORD x = MyRand(162, 900);
 		DWORD y = MyRand(162, 500);
 		m_pGame->m_pMove->Run(m_pStep->Extra[0], m_pStep->Extra[1], m_pAccount, x, y, true, rand_click);
