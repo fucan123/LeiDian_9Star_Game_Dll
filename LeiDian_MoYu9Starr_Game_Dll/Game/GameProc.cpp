@@ -823,8 +823,12 @@ void GameProc::ExecInFB()
 			SetGameCursorPos(750, 536);
 			Sleep(260);
 			int vx = MyRand(700, 800), vy = MyRand(535, 550);
-			//m_pGame->m_pEmulator->Tap(vx, vy);
-			Click(vx, vy);
+			for (int z = 0; z < 3; z++) {
+				vx = MyRand(700, 800), vy = MyRand(535, 550);
+				//m_pGame->m_pEmulator->Tap(vx, vy);
+				Click(vx, vy);
+				Sleep(360);
+			}
 			LOGVARP2(log, "blue_r b", L"邀请进入副本:(%d,%d)", vx, vy);
 			m_pGame->m_pServer->InFB(m_pGame->m_pBig, nullptr, 0);
 			//while (true) Sleep(1000);
@@ -1108,6 +1112,7 @@ bool GameProc::ExecStep(Link<_step_*>& link, bool isfb)
 		ChNCk();
 	}
 
+	DWORD key_down_ms = 0;
 	bool bk = false;
 	char msg[128];
 	switch (m_pStep->OpCode)
@@ -1171,6 +1176,15 @@ bool GameProc::ExecStep(Link<_step_*>& link, bool isfb)
 				bk = true;
 			}
 		}
+		else {
+			LOGVARP2(log, "red b", L"流程->移至错误:%hs", m_pStep->Cmd);
+		}
+		break;
+	case OP_KEYDOWN:
+		key_down_ms = GetTickCount();
+	case OP_KEYMOVE:
+		LOGVARP2(log, "c0 b", L"流程->按键");
+		Key(true, 0x01);
 		break;
 	case OP_NPC:
 		DbgPrint("流程->NPC:%s(点击:%d,%d 至 %d,%d)\n", m_pStep->NPCName, m_pStep->X, m_pStep->Y, m_pStep->X2, m_pStep->Y2);
@@ -1329,11 +1343,17 @@ bool GameProc::ExecStep(Link<_step_*>& link, bool isfb)
 	do {
 		while (m_bNoVerify); // 没有通过验证
 
+		bool key_up = false;
 		do {
 			if (m_bStop || m_bReStart)
 				return false;
-			if (m_bPause)
+			if (m_bPause) {
+				if (!key_up && (m_pStep->OpCode == OP_KEYDOWN || m_pStep->OpCode == OP_KEYMOVE)) {
+					Key(false, 0x02); // 弹起
+					key_up = true;
+				}
 				Sleep(500);
+			}
 		} while (m_bPause);
 
 		if (isfb && m_pGame->m_Setting.FBTimeOutErvry > 0) { // 副本最大允许时间
@@ -1349,7 +1369,8 @@ bool GameProc::ExecStep(Link<_step_*>& link, bool isfb)
 		Sleep(10);
 
 		bool use_yao_bao = false;
-		if (m_pStep->OpCode == OP_MOVE || m_pStep->OpCode == OP_MOVERAND || m_pStep->OpCode == OP_MOVENPC) {
+		if (m_pStep->OpCode == OP_MOVE || m_pStep->OpCode == OP_MOVERAND || m_pStep->OpCode == OP_MOVENPC
+			|| m_pStep->OpCode == OP_KEYDOWN || m_pStep->OpCode == OP_KEYMOVE) {
 			m_nFirstMove++;
 			mov_i++;
 			if (mov_i == 50 && mov_i <= 60) {
@@ -1402,7 +1423,11 @@ bool GameProc::ExecStep(Link<_step_*>& link, bool isfb)
 					}
 				}
 			}
-
+			if ( m_pStep->OpCode == OP_KEYDOWN || m_pStep->OpCode == OP_KEYMOVE) {
+				if ((mov_i % 2) == 0) {
+					Key(false, 0x01); // 持续按
+				}
+			}
 			// 疯狂点击坐标
 			if (m_ClickCrazy.Count) {
 				ClickCrazy();
@@ -1419,6 +1444,10 @@ bool GameProc::ExecStep(Link<_step_*>& link, bool isfb)
 			}
 			else if (life_flag == -1) { // 需要复活
 				m_pGame->SaveScreen("无血");
+
+				if (m_pStep->OpCode == OP_KEYDOWN || m_pStep->OpCode == OP_KEYMOVE) {
+					Key(false, 0x02); // 弹起
+				}
 
 				m_pGame->m_pGameData->ReadCoor(&m_pAccount->LastX, &m_pAccount->LastY, m_pAccount);
 				if (!m_pAccount->LastX || !m_pAccount->LastY) {
@@ -1454,6 +1483,9 @@ bool GameProc::ExecStep(Link<_step_*>& link, bool isfb)
 				LOG2(L"传送超时", "red");
 				complete = true;
 			}
+		}
+		if (m_pStep->OpCode == OP_KEYDOWN) {
+			complete = (GetTickCount() - key_down_ms) >= m_pStep->Extra[0]; // 时间好
 		}
 
 		if ((m_pGame->m_nHideFlag & 0x000000ff) != 0x000000CB) { // 不是正常启动的0x168999CB
@@ -1549,6 +1581,10 @@ bool GameProc::ExecStep(Link<_step_*>& link, bool isfb)
 				LOG2(L"--------已记录此步骤--------\n", "blue_r b");
 			}
 
+			if (m_pStep->OpCode == OP_KEYDOWN || m_pStep->OpCode == OP_KEYMOVE) {
+				Key(false, 0x02); // 弹起
+			}
+
 			m_stLast.OpCode = m_pStep->OpCode;
 			m_pStepLast = m_pStep;
 			
@@ -1620,12 +1656,32 @@ bool GameProc::StepIsComplete()
 			m_nReMoveCount++;
 		}
 		break;
+	case OP_KEYMOVE:
+		if (m_pGame->m_pGameData->IsInArea(m_pStep->X, m_pStep->Y, m_pStep->X2, m_pStep->Y2, m_pAccount)) {
+			result = true;
+			goto end;
+		}
+		if (!m_pGame->m_pMove->IsMove(m_pAccount)) {
+			Key(false, 0x02); // 弹起
+			Key(true, 0x01);  // 再按哦
+		}
+		break;
 	default:
 		result = true;
 		break;
 	}
 end:
 	return result;
+}
+
+// 按键
+void GameProc::Key(bool first, int flag)
+{
+	for (int i = 0; i < m_pStep->OpCount; i++) {
+		KeyboardEvent(m_pStep->Key[i], flag);
+		if (m_pStep->OpCount > 0 && i == 0)
+			Sleep(26);
+	}
 }
 
 // 移动
@@ -3134,7 +3190,7 @@ void GameProc::DBClick(int x, int y, HWND hwnd)
 }
 
 // 按键
-void GameProc::Keyboard(char key, int flag, HWND hwnd)
+void GameProc::Keyboard(char key, int flag, HWND hwnd, LPARAM lParam)
 {
 	if (!hwnd)
 		hwnd = m_hWndGame;
@@ -3143,6 +3199,15 @@ void GameProc::Keyboard(char key, int flag, HWND hwnd)
 		::PostMessage(hwnd, WM_KEYDOWN, key, 0);
 	if (flag & 0x02)
 		::PostMessage(hwnd, WM_KEYUP, key, 0);
+}
+
+
+void GameProc::KeyboardEvent(char key, int flag)
+{
+	if (flag & 0x01)
+		keybd_event(key, MapVirtualKey(key, 0), 0, 0);
+	if (flag & 0x02)
+		keybd_event(key, MapVirtualKey(key, 0), KEYEVENTF_KEYUP, 0);
 }
 
 int GameProc::IsNeedAddLife(int low_life)

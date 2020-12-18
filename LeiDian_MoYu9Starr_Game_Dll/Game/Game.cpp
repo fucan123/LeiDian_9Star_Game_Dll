@@ -1443,6 +1443,9 @@ void Game::ReadSetting(const char* data)
 		SetSetting("autologin_eh", m_Setting.AutoLogin_EH);
 		SetSetting("autologin_em", m_Setting.AutoLogin_EM);
 	}
+	else if (strcmp(explode[0], "留在门口") == 0) {
+		m_Setting.OutNoGoXL = strcmp("是", explode[1]) == 0;
+	}
 
 	//printf("配置.%s: %s%s\n", explode[0], explode[1], tmp);
 	//LOGVARN2(64, "cb", L"配置.%hs: %hs%hs", explode[0], explode[1], tmp);

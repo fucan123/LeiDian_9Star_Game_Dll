@@ -90,6 +90,8 @@ public:
 	bool ExecStep(Link<_step_*>& link, bool isfb=false);
 	// 步骤是否已执行完毕
 	bool StepIsComplete();
+	// 按键
+	void Key(bool first, int flag = 0xff);
 	// 移动
 	void Move(bool rand_click=false);
 	// 移至NPC
@@ -177,7 +179,9 @@ public:
 	// 鼠标左键双击
 	void DBClick(int x, int y, HWND hwnd=NULL);
 	// 按键
-	void Keyboard(char key, int flag=0xff, HWND hwnd=NULL);
+	void Keyboard(char key, int flag=0xff, HWND hwnd=NULL, LPARAM lParam=0);
+	// 按键
+	void KeyboardEvent(char key, int flag=0xff);
 	// 读取人物坐标
 	bool ReadCoor();
 	// 读取人物血量

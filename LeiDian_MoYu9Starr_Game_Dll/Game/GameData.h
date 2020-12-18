@@ -83,6 +83,8 @@ public:
 
 	// 是否在指定区域坐标 allow=误差
 	bool IsInArea(int x, int y, int allow, _account_* account=nullptr);
+	// 是否在指定范围
+	bool IsInArea(int x, int y, int x2, int y2, _account_* account = nullptr);
 	// 是否不在指定区域坐标 allow=误差
 	bool IsNotInArea(int x, int y, int allow, _account_* account=nullptr);
 

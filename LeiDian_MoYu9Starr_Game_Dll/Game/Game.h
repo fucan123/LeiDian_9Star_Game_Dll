@@ -370,6 +370,7 @@ public:
 		int  IsDebug;        // 是否显示调试信息
 
 		int  NoHideProc;     // 是否不隐藏进程
+		int  OutNoGoXL;      // 出副本不去项链那里
 		
 	} m_Setting;
 

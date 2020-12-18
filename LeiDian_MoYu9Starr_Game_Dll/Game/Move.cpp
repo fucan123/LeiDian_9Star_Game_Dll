@@ -82,6 +82,9 @@ int Move::Run(DWORD x, DWORD y, _account_* account, DWORD click_x, DWORD click_y
 
 	DbgPrint("设置目的地(%d,%d)\n", x, y);
 	LOGVARN2(64, "c6", L"设置目的地(%d,%d)", x, y);
+	if (x == 0 || y == 0) {
+		LOGVARN2(64, "red", L"错误目的地为(%d,%d) %hs", x, y, m_pGame->m_pGameProc->m_pStep->Cmd);
+	}
 	m_pGame->m_pGameData->WriteMoveCoor(x, y, account);
 
 	GoWay();

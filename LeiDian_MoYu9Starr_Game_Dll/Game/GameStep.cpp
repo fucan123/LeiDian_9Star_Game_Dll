@@ -298,6 +298,7 @@ bool GameStep::InitSteps(const char* path, const char* file)
 
 	strcpy(m_chStepFiles[m_nStepCount], file);
 
+	bool is_m = false;
 	int i = 0, index = 0;
 	int length = 0;
 	char data[128];
@@ -306,6 +307,15 @@ bool GameStep::InitSteps(const char* path, const char* file)
 		if (length == 0) {
 			continue;
 		}
+		if (strstr(data, "mm")) {
+			is_m = true;
+		}
+		if (is_m) {
+			for (int i = 0; i < length; i++) {
+				data[i] = data[i] + 1;
+			}
+		}
+
 		char log[64];
 
 		int ret = ParseStep(trim(data), m_StepList[m_nStepCount]);
@@ -366,7 +376,7 @@ int GameStep::ParseStep(const char* data, Link<_step_*>& link)
 		cmd++;
 	}
 
-	//printf("%s (%s)\n", data, cmd);
+	printf("%s (%s)\n", data, cmd);
 	InitStep(step);
 	try {
 		step.OpCode = TransFormOP(cmd);
@@ -387,10 +397,11 @@ int GameStep::ParseStep(const char* data, Link<_step_*>& link)
 			step.p_npc = GetNpcCoor(explode[1]);
 			if (!step.p_npc) {
 				printf("NPC (%s) 信息未找到.\n", explode[1]);
+				::MessageBoxA(NULL, data, "此NPC信息未找到", MB_OK);
 				result = -1;
 			}
 			else {
-				//printf("NPC (%s) 信息已找到.\n", step.p_npc->Name);
+				printf("NPC (%s) 信息已找到.\n", step.p_npc->Name);
 			}
 			break;
 		case OP_NPC:
@@ -470,6 +481,16 @@ int GameStep::ParseStep(const char* data, Link<_step_*>& link)
 		case OP_SELL:
 			break;
 		case OP_BUTTON:
+			break;
+		case OP_KEY:
+		case OP_KEYDOWN:
+			TransFormKey(explode[1], step);
+			step.Extra[0] = explode.GetValue2Int(2); // 等待毫秒数值
+			break;
+		case OP_KEYMOVE:
+			TransFormKey(explode[1], step);
+			TransFormPos(explode[2], step);
+			TransFormPos(explode[3], step.X2, step.Y2);
 			break;
 		case OP_CLICK:
 		case OP_CLICKRAND:
@@ -577,6 +598,12 @@ STEP_CODE GameStep::TransFormOP(const char* data)
 		return OP_SELL;
 	if (strcmp(data, "按钮") == 0 || strcmp(data, "确定") == 0)
 		return OP_BUTTON;
+	if (strcmp(data, "按键") == 0)
+		return OP_KEY;
+	if (strcmp(data, "按下") == 0)
+		return OP_KEYDOWN;
+	if (strcmp(data, "按走") == 0)
+		return OP_KEYMOVE;
 	if (strcmp(data, "点击") == 0)
 		return OP_CLICK;
 	if (strcmp(data, "随点") == 0)
@@ -595,6 +622,23 @@ STEP_CODE GameStep::TransFormOP(const char* data)
 		return OP_RECORD;
 
 	return OP_UNKNOW;
+}
+
+// 转成实际按键
+bool GameStep::TransFormKey(const char* str, _step_& step)
+{
+	Explode arr("|", str);
+	for (int i = 0; i < arr.GetCount(); i++) {
+		char key = arr[i][0];
+		if (key >= 'a' && key <= 'z') { 
+			key -= 32; // 大写
+		}
+		step.Key[i] = key;
+		step.OpCount++;
+	}
+	strcpy(step.Name, str);
+	printf("转成实际按键:%s %s %d\n", str, step.Name, step.OpCount);
+	return false;
 }
 
 // 转成实际坐标

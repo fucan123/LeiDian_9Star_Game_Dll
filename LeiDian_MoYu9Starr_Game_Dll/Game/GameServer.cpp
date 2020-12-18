@@ -96,6 +96,7 @@ void GameServer::Open(const char* data, int len)
 	m_Server.SetInt(p->IsBig);
 	m_Server.SetInt(m_pGame->m_Setting.LogoutByGetXL);
 	m_Server.SetInt(m_pGame->m_iSendCreateTeam);
+	m_Server.SetInt(m_pGame->m_Setting.OutNoGoXL);
 	Send(0, SCK_ACCOUNT, false);
 
 	memcpy(&m_pGame->m_fScale, data, 4);

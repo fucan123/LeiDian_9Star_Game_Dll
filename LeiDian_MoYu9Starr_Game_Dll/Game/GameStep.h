@@ -42,6 +42,9 @@ enum STEP_CODE
 	OP_DROPITEM,        // 丢物
 	OP_SELL,            // 卖东西
 	OP_BUTTON,          // 点击按钮
+	OP_KEY,             // 按键
+	OP_KEYDOWN,         // 按下
+	OP_KEYMOVE,         // 按走
 	OP_CLICK,           // 点击
 	OP_CLICKRAND,       // 随点
 	OP_CLICKCRAZ,       // 狂点
@@ -96,6 +99,7 @@ struct _step_
 	DWORD     WaitMs;       // 等待多少毫秒或是否等待技能冷却或技能可以有多少秒冷却
 	DWORD     OpCount;      // 操作次数
 	DWORD     ButtonId;     // 按钮ID
+	char      Key[8];       // 按键
 	int       SmallV;       // 小号操作值
 	DWORD     Extra[8];     // 扩展
 	__int64   ExecTime;     // 执行时间
@@ -146,6 +150,8 @@ public:
 private:
 	// 转成实际指令
 	STEP_CODE TransFormOP(const char* data);
+	// 转成实际按键
+	bool TransFormKey(const char* str, _step_& step);
 	// 转成实际坐标
 	bool TransFormPos(const char* str, _step_& step);
 	// 转成实际坐标

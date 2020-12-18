@@ -98,7 +98,13 @@ void GameData::WatchGame()
 						ReadGameMemory();
 
 					m_pGame->SetGameAddr(m->Account, &m_DataAddr);
-					strcpy(m->Account->Role, name);
+					if (strlen(name) > 0) {
+						strcpy(m->Account->Role, name);
+					}
+					else {
+						LOGVARP2(log, "red", L"无法获得角色->使用默认配置:%hs", m->Account->Role);
+					}
+					
 					ReadLife(nullptr, nullptr, m->Account);
 					DbgPrint("%hs 角色名字:%hs 坐标:%d,%d 血量:%d/%d %hs\n",
 						m->Account->Name, m->Account->Role, m_dwX, m_dwY,
@@ -163,6 +169,37 @@ bool GameData::IsInArea(int x, int y, int allow, _account_* account)
 	return abs(cx) <= allow && abs(cy) <= allow;
 }
 
+// 是否在指定范围
+bool GameData::IsInArea(int x, int y, int x2, int y2, _account_ * account)
+{
+	DWORD pos_x = 0, pos_y = 0;
+	ReadCoor(&pos_x, &pos_y, account);
+
+	bool result = true;
+	if (x > 0) {
+		if (!x2) {
+			result = x == pos_x;
+		}
+		else {
+			int min_x = min(x, x2);
+			int max_x = max(x, x2);
+			result = pos_x >= min_x && pos_x <= max_x;
+		}
+	}
+	if (result && y > 0) {
+		if (!y2) {
+			result = y == pos_y;
+		}
+		else {
+			int min_y = min(y, y2);
+			int max_y = max(y, y2);
+			result = pos_y >= min_y && pos_y <= max_y;
+		}
+	}
+
+	return result;
+}
+
 // 是否不在指定区域坐标 allow=误差
 bool GameData::IsNotInArea(int x, int y, int allow, _account_* account)
 {
@@ -199,9 +236,9 @@ bool GameData::FindPlayerAddr()
 
 	// 4:0x073B1190 4:0x0000DECE 4:0x00000000 4:0x00000001 4:0x00000000 4:0x00000030 4:0x00000000 4:0x0000DECE 4:0x00000000 4:0x00000001 4:0x00000000 4:0x00000030
 	DWORD codes[] = {
-		0x079A1E88, 0x00000000, 0xFFFFFFFF, 0x3F800000,
-		0x00010001, 0x00000000, 0x079A2028, 0x00000011,
-	}; // 073AE2C8
+		0x079FAC18, 0x00000000, 0xFFFFFFFF, 0x3F800000,
+		0x00010001, 0x00000000, 0x079FADB8, 0x00000011,
+	};
 
 	DWORD address = 0;
 	DWORD result = SearchCode(codes, sizeof(codes) / sizeof(DWORD), &address);
@@ -236,10 +273,10 @@ bool GameData::FindMoveCoorAddr()
 {
 	// 4:0x00 4:0x00 4:0x00 4:0x00 4:0x00 4:0x00 4:0x00 4:0x000014DB
 	DWORD codes[] = {
+		0x00000101, 0x00000000, 0x00000000, 0x00000000,
 		0x00000011, 0x00000011, 0x00000011, 0x00000011,
-		0x00000011, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0x00000022,
-		0x00000022, 0x00000022, 0x00000022, 0x0000110E,
+		0x00000011, 0x00000011, 0x00000000, 0x00000022,
+		0x00000022, 0x00000022, 0x00000022, 0x00000022,
 		0x00000022, 0x00000011, 0x00000011, 0x00000000,
 	};
 	DWORD address = 0;
@@ -249,7 +286,7 @@ bool GameData::FindMoveCoorAddr()
 		//LOGVARN2(32, "blue", L"目的地坐标地址:%08X %08X", address, address&0x0f);
 		if (data[0x0B] > 0x100 && data[0x0B] < 0x100000
 			&& data[0x0C] > 30 && data[0x0C] < 1000 && data[0x0D] > 30 && data[0x0D] < 1060 && data[0x10] < 0x10
-			&& address > 0x10000000 && (address&0x0f) == 0x08) {
+			&& address > 0x10000000 && (address&0x0f) == 0x00) {
 			m_DataAddr.MoveX = address + 0x30;
 			m_DataAddr.MoveY = m_DataAddr.MoveX + 4;
 
