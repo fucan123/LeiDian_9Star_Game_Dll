@@ -787,6 +787,7 @@ void GameProc::ExecInFB()
 
 		InitData();
 		m_pGame->SetStatus(m_pGame->m_pBig, ACCSTA_ATFB, true);
+		SetForegroundWindow(m_hWndGame); // 雷电窗口置前
 
 		char* step_file = m_pGameStep->SelectRandStep();
 
@@ -1288,6 +1289,15 @@ bool GameProc::ExecStep(Link<_step_*>& link, bool isfb)
 		m_ClickCrazy.Y2 = m_pStep->Y2;
 		m_ClickCrazy.Count = m_pStep->OpCount;
 		bk = true;
+		break;
+	case OP_CLICKABS:
+		DbgPrint("流程->左击:%d,%d %d,%d\n", m_pStep->X, m_pStep->Y);
+		LOGVARP2(log, "c0 b", L"流程->左击:%d,%d %d,%d", m_pStep->X, m_pStep->Y);
+		mouse_event(MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE, m_pStep->X * 65536 / GetSystemMetrics(SM_CXSCREEN), m_pStep->Y * 65536 / GetSystemMetrics(SM_CYSCREEN), 0, 0);
+		Sleep(10);
+		mouse_event(MOUSEEVENTF_LEFTDOWN, m_pStep->X, m_pStep->Y, 0, 0);
+		Sleep(6);
+		mouse_event(MOUSEEVENTF_LEFTUP, m_pStep->X, m_pStep->Y, 0, 0);
 		break;
 	case OP_WAIT:
 		DbgPrint("流程->等待:%d %d\n", m_pStep->WaitMs / 1000, m_pStep->Extra[0]);

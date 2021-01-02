@@ -495,6 +495,7 @@ int GameStep::ParseStep(const char* data, Link<_step_*>& link)
 		case OP_CLICK:
 		case OP_CLICKRAND:
 		case OP_CLICKCRAZ:
+		case OP_CLICKABS:
 			TransFormPos(explode[1], step);
 			TransFormPos(explode[2], step.X2, step.Y2);
 			step.OpCount = explode.GetValue2Int(3);
@@ -610,6 +611,8 @@ STEP_CODE GameStep::TransFormOP(const char* data)
 		return OP_CLICKRAND;
 	if (strcmp(data, "¿ñµã") == 0)
 		return OP_CLICKCRAZ;
+	if (strcmp(data, "×ó»÷") == 0)
+		return OP_CLICKABS;
 	if (strcmp(data, "²éÕÒ") == 0)
 		return OP_FIND;
 	if (strcmp(data, "µÈ´ý") == 0)

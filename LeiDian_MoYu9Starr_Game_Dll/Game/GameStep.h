@@ -22,7 +22,7 @@ typedef unsigned long long qword;
 
 enum STEP_CODE
 {
-	OP_UNKNOW  = 0x00,  // 未知
+	OP_UNKNOW = 0x00,  // 未知
 	OP_MOVE,            // 移动
 	OP_MOVEFAR,         // 传送
 	OP_MOVERAND,        // 随移
@@ -48,6 +48,7 @@ enum STEP_CODE
 	OP_CLICK,           // 点击
 	OP_CLICKRAND,       // 随点
 	OP_CLICKCRAZ,       // 狂点
+	OP_CLICKABS,        // 点击相对于屏幕
 	OP_FIND,            // 查找
 	OP_WAIT,            // 等待
 	OP_WAIT_GW,         // 等怪

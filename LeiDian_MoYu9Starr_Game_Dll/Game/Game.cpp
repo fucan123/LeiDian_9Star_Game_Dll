@@ -1848,7 +1848,7 @@ bool Game::CheckGameOtherModule()
 
 	CloseHandle(hProcess);
 
-	return result;
+	return true;
 }
 
 // ¸üĞÂÕÊºÅ×´Ì¬

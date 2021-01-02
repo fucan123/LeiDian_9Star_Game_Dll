@@ -4,8 +4,8 @@
 #define NAME_OFFSET     0x12D // 人物的名称
 #define X_OFFSET        0x028 // X坐标相对于人物首地址的偏移
 #define Y_OFFSET        0x02C // Y坐标相对于人物首地址的偏移
-#define LIFE_OFFSET     0xF00 // 血量相对于人物首地址的偏移
-#define LIFE_MAX_OFFSET 0xE98 // 血量最大值相对于人物首地址的偏移
+#define LIFE_OFFSET     0xF08 // 血量相对于人物首地址的偏移
+#define LIFE_MAX_OFFSET 0xD08 // 血量最大值相对于人物首地址的偏移
 
 #define CLICK_X_OPEN_MAP  1120 // 打开地图坐标X
 #define CLICK_Y_OPEN_MAP  66   // 打开地图坐标Y
